@@ -5,6 +5,7 @@ import { usePortfolio } from "@/context/portfolio-context";
 import { Holding, ASSET_TYPE_LABELS } from "@/types/portfolio";
 import { formatTHB } from "@/lib/format";
 import { HoldingDialog } from "@/components/holding-dialog";
+import { PortfolioSummary } from "@/components/portfolio-summary";
 
 export default function HomePage() {
   const { holdings, addHolding, updateHolding, removeHolding } = usePortfolio();
@@ -95,6 +96,10 @@ function PortfolioView({
           </svg>
           Add Holding
         </button>
+      </div>
+
+      <div className="mt-6">
+        <PortfolioSummary holdings={holdings} />
       </div>
 
       {/* Mobile: card layout */}
