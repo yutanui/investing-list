@@ -1,24 +1,116 @@
 "use client";
 
+import { useState } from "react";
 import { usePortfolio } from "@/context/portfolio-context";
-import { ASSET_TYPE_LABELS } from "@/types/portfolio";
+import { Holding, ASSET_TYPE_LABELS } from "@/types/portfolio";
 import { formatTHB } from "@/lib/format";
+import { HoldingDialog } from "@/components/holding-dialog";
+import { PortfolioSummary } from "@/components/portfolio-summary";
 
 export default function HomePage() {
-  const { holdings } = usePortfolio();
+  const { holdings, addHolding, updateHolding, removeHolding } = usePortfolio();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingHolding, setEditingHolding] = useState<Holding | null>(null);
 
-  if (holdings.length === 0) {
-    return <EmptyState />;
+  function openAdd() {
+    setEditingHolding(null);
+    setDialogOpen(true);
+  }
+
+  function openEdit(holding: Holding) {
+    setEditingHolding(holding);
+    setDialogOpen(true);
+  }
+
+  function handleSave(holding: Holding) {
+    if (editingHolding) {
+      updateHolding(holding.id, holding);
+    } else {
+      addHolding(holding);
+    }
+    setDialogOpen(false);
+    setEditingHolding(null);
+  }
+
+  function handleDelete(id: string) {
+    removeHolding(id);
+    setDialogOpen(false);
+    setEditingHolding(null);
+  }
+
+  function handleClose() {
+    setDialogOpen(false);
+    setEditingHolding(null);
   }
 
   return (
-    <section aria-label="Portfolio overview">
-      <h2 className="text-2xl font-semibold tracking-tight">Your Portfolio</h2>
-      <p className="mt-1 text-sm text-foreground/60">
-        {holdings.length} {holdings.length === 1 ? "holding" : "holdings"}
-      </p>
+    <>
+      {holdings.length === 0 ? (
+        <EmptyState onAdd={openAdd} />
+      ) : (
+        <PortfolioView
+          holdings={holdings}
+          onAdd={openAdd}
+          onEdit={openEdit}
+        />
+      )}
 
-      <div className="mt-6 overflow-x-auto">
+      <HoldingDialog
+        open={dialogOpen}
+        holding={editingHolding}
+        onSave={handleSave}
+        onDelete={editingHolding ? handleDelete : undefined}
+        onClose={handleClose}
+      />
+    </>
+  );
+}
+
+function PortfolioView({
+  holdings,
+  onAdd,
+  onEdit,
+}: {
+  holdings: Holding[];
+  onAdd: () => void;
+  onEdit: (holding: Holding) => void;
+}) {
+  return (
+    <section aria-label="Portfolio overview">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Your Portfolio
+          </h2>
+          <p className="mt-1 text-sm text-foreground/60">
+            {holdings.length} {holdings.length === 1 ? "holding" : "holdings"}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-3 py-2 text-sm font-medium text-background hover:bg-foreground/90 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Add Holding
+        </button>
+      </div>
+
+      <div className="mt-6">
+        <PortfolioSummary holdings={holdings} />
+      </div>
+
+      {/* Mobile: card layout */}
+      <div className="mt-6 space-y-3 sm:hidden">
+        {holdings.map((h) => (
+          <HoldingCard key={h.id} holding={h} onEdit={onEdit} />
+        ))}
+      </div>
+
+      {/* Desktop: table layout */}
+      <div className="mt-6 hidden overflow-x-auto sm:block">
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-foreground/10 text-xs uppercase tracking-wide text-foreground/50">
@@ -27,7 +119,8 @@ export default function HomePage() {
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Shares</th>
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Avg Cost</th>
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Current Price</th>
-              <th scope="col" className="pb-3 text-right font-medium">Market Value</th>
+              <th scope="col" className="pb-3 pr-4 text-right font-medium">Market Value</th>
+              <th scope="col" className="pb-3 font-medium"><span className="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody className="tabular-nums">
@@ -45,8 +138,20 @@ export default function HomePage() {
                 <td className="py-3 pr-4 text-right">{h.shares}</td>
                 <td className="py-3 pr-4 text-right">{formatTHB(h.averageCost)}</td>
                 <td className="py-3 pr-4 text-right">{formatTHB(h.currentPrice)}</td>
-                <td className="py-3 text-right font-medium">
+                <td className="py-3 pr-4 text-right font-medium">
                   {formatTHB(h.shares * h.currentPrice)}
+                </td>
+                <td className="py-3">
+                  <button
+                    type="button"
+                    onClick={() => onEdit(h)}
+                    className="rounded-md p-1.5 text-foreground/40 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                    aria-label={`Edit ${h.name}`}
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                    </svg>
+                  </button>
                 </td>
               </tr>
             ))}
@@ -57,7 +162,58 @@ export default function HomePage() {
   );
 }
 
-function EmptyState() {
+function HoldingCard({
+  holding,
+  onEdit,
+}: {
+  holding: Holding;
+  onEdit: (holding: Holding) => void;
+}) {
+  const marketValue = holding.shares * holding.currentPrice;
+
+  return (
+    <article
+      className="rounded-lg border border-foreground/10 px-4 py-3"
+      aria-label={`${holding.name} holding`}
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="font-medium">{holding.name}</div>
+          <div className="mt-0.5 flex items-center gap-2 text-xs text-foreground/50">
+            {holding.ticker && <span className="uppercase">{holding.ticker}</span>}
+            <span>{ASSET_TYPE_LABELS[holding.assetType]}</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onEdit(holding)}
+          className="rounded-md p-1.5 text-foreground/40 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+          aria-label={`Edit ${holding.name}`}
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-y-1.5 text-sm tabular-nums">
+        <div className="text-foreground/50">Shares</div>
+        <div className="text-right">{holding.shares}</div>
+
+        <div className="text-foreground/50">Avg Cost</div>
+        <div className="text-right">{formatTHB(holding.averageCost)}</div>
+
+        <div className="text-foreground/50">Current Price</div>
+        <div className="text-right">{formatTHB(holding.currentPrice)}</div>
+
+        <div className="text-foreground/50 font-medium">Market Value</div>
+        <div className="text-right font-medium">{formatTHB(marketValue)}</div>
+      </div>
+    </article>
+  );
+}
+
+function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <section
       aria-label="Empty portfolio"
@@ -83,6 +239,16 @@ function EmptyState() {
       <p className="mt-1 max-w-sm text-sm text-foreground/60">
         Start building your portfolio by adding your first investment holding.
       </p>
+      <button
+        type="button"
+        onClick={onAdd}
+        className="mt-6 inline-flex items-center gap-1.5 rounded-md bg-foreground px-4 py-2.5 text-sm font-medium text-background hover:bg-foreground/90 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+      >
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        Add Your First Holding
+      </button>
     </section>
   );
 }
