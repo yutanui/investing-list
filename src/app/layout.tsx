@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { AuthProvider } from "@/context/auth-context";
 import { PortfolioProvider } from "@/context/portfolio-context";
+import { Header } from "@/components/header";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -25,25 +27,15 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <Header />
-        <PortfolioProvider>
-          <main id="main-content" className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-            {children}
-          </main>
-        </PortfolioProvider>
+        <AuthProvider>
+          <Header />
+          <PortfolioProvider>
+            <main id="main-content" className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+              {children}
+            </main>
+          </PortfolioProvider>
+        </AuthProvider>
       </body>
     </html>
-  );
-}
-
-function Header() {
-  return (
-    <header className="border-b border-foreground/10">
-      <nav className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8" aria-label="Main navigation">
-        <h1 className="text-lg font-semibold tracking-tight">
-          Investing Portfolio
-        </h1>
-      </nav>
-    </header>
   );
 }
