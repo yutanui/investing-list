@@ -8,7 +8,7 @@ import { HoldingDialog } from "@/components/holding-dialog";
 import { PortfolioSummary } from "@/components/portfolio-summary";
 
 export default function HomePage() {
-  const { holdings, addHolding, updateHolding, removeHolding } = usePortfolio();
+  const { holdings, loading, addHolding, updateHolding, removeHolding } = usePortfolio();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingHolding, setEditingHolding] = useState<Holding | null>(null);
 
@@ -41,6 +41,14 @@ export default function HomePage() {
   function handleClose() {
     setDialogOpen(false);
     setEditingHolding(null);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-sm text-foreground/50">Loading portfolio…</p>
+      </div>
+    );
   }
 
   return (
