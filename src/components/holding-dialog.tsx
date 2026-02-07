@@ -3,10 +3,13 @@
 import { useRef, useEffect } from "react";
 import { Holding, AssetType, ASSET_TYPE_LABELS } from "@/types/portfolio";
 
+// Holding data without portfolioId - the context adds it
+type HoldingFormData = Omit<Holding, "portfolioId">;
+
 interface HoldingDialogProps {
   open: boolean;
   holding?: Holding | null;
-  onSave: (holding: Holding) => void;
+  onSave: (holding: HoldingFormData) => void;
   onDelete?: (id: string) => void;
   onClose: () => void;
 }
@@ -66,7 +69,7 @@ export function HoldingDialog({
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    const saved: Holding = {
+    const saved: HoldingFormData = {
       id: holding?.id ?? generateId(),
       name: (formData.get("name") as string).trim(),
       ticker: (formData.get("ticker") as string).trim() || undefined,

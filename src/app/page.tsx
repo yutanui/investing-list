@@ -1,97 +1,116 @@
 "use client";
 
 import { useState } from "react";
-import { usePortfolio } from "@/context/portfolio-context";
-import { Holding, ASSET_TYPE_LABELS } from "@/types/portfolio";
-import { formatTHB } from "@/lib/format";
-import { HoldingDialog } from "@/components/holding-dialog";
-import { PortfolioSummary } from "@/components/portfolio-summary";
+import { usePortfolioList } from "@/context/portfolio-list-context";
+import { Portfolio } from "@/types/portfolio";
+import { loadHoldings } from "@/lib/storage";
+import { PortfolioCard } from "@/components/portfolio-card";
+import { PortfolioDialog } from "@/components/portfolio-dialog";
 
 export default function HomePage() {
-  const { holdings, loading, addHolding, updateHolding, removeHolding } = usePortfolio();
+  const { portfolios, loading, addPortfolio, updatePortfolio, removePortfolio } = usePortfolioList();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingHolding, setEditingHolding] = useState<Holding | null>(null);
+  const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
+  const [dialogKey, setDialogKey] = useState(0);
+
+  // Get holdings count and total value for each portfolio (localStorage only for now)
+  const allHoldings = typeof window !== "undefined" ? loadHoldings() : [];
+
+  function getPortfolioStats(portfolioId: string) {
+    const portfolioHoldings = allHoldings.filter((h) => h.portfolioId === portfolioId);
+    const holdingsCount = portfolioHoldings.length;
+    const totalValue = portfolioHoldings.reduce(
+      (sum, h) => sum + h.shares * h.currentPrice,
+      0
+    );
+    return { holdingsCount, totalValue };
+  }
 
   function openAdd() {
-    setEditingHolding(null);
+    setEditingPortfolio(null);
+    setDialogKey((k) => k + 1);
     setDialogOpen(true);
   }
 
-  function openEdit(holding: Holding) {
-    setEditingHolding(holding);
+  function openEdit(portfolio: Portfolio) {
+    setEditingPortfolio(portfolio);
     setDialogOpen(true);
   }
 
-  function handleSave(holding: Holding) {
-    if (editingHolding) {
-      updateHolding(holding.id, holding);
+  function handleSave(portfolio: Portfolio) {
+    if (editingPortfolio) {
+      updatePortfolio(portfolio.id, portfolio);
     } else {
-      addHolding(holding);
+      addPortfolio(portfolio);
     }
     setDialogOpen(false);
-    setEditingHolding(null);
+    setEditingPortfolio(null);
   }
 
   function handleDelete(id: string) {
-    removeHolding(id);
+    removePortfolio(id);
     setDialogOpen(false);
-    setEditingHolding(null);
+    setEditingPortfolio(null);
   }
 
   function handleClose() {
     setDialogOpen(false);
-    setEditingHolding(null);
+    setEditingPortfolio(null);
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <p className="text-sm text-foreground/50">Loading portfolio…</p>
+        <p className="text-sm text-foreground/50">Loading portfolios…</p>
       </div>
     );
   }
 
   return (
     <>
-      {holdings.length === 0 ? (
+      {portfolios.length === 0 ? (
         <EmptyState onAdd={openAdd} />
       ) : (
-        <PortfolioView
-          holdings={holdings}
+        <PortfolioListView
+          portfolios={portfolios}
+          getPortfolioStats={getPortfolioStats}
           onAdd={openAdd}
           onEdit={openEdit}
         />
       )}
 
-      <HoldingDialog
+      <PortfolioDialog
+        key={dialogKey}
         open={dialogOpen}
-        holding={editingHolding}
+        portfolio={editingPortfolio}
         onSave={handleSave}
-        onDelete={editingHolding ? handleDelete : undefined}
+        onDelete={editingPortfolio ? handleDelete : undefined}
         onClose={handleClose}
       />
     </>
   );
 }
 
-function PortfolioView({
-  holdings,
+function PortfolioListView({
+  portfolios,
+  getPortfolioStats,
   onAdd,
   onEdit,
 }: {
-  holdings: Holding[];
+  portfolios: Portfolio[];
+  getPortfolioStats: (id: string) => { holdingsCount: number; totalValue: number };
   onAdd: () => void;
-  onEdit: (holding: Holding) => void;
+  onEdit: (portfolio: Portfolio) => void;
 }) {
   return (
-    <section aria-label="Portfolio overview">
+    <section aria-label="Portfolio list">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">
-            Your Portfolio
+            Your Portfolios
           </h2>
           <p className="mt-1 text-sm text-foreground/60">
-            {holdings.length} {holdings.length === 1 ? "holding" : "holdings"}
+            {portfolios.length} {portfolios.length === 1 ? "portfolio" : "portfolios"}
           </p>
         </div>
         <button
@@ -102,129 +121,32 @@ function PortfolioView({
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
-          Add Holding
+          Add Portfolio
         </button>
       </div>
 
-      <div className="mt-6">
-        <PortfolioSummary holdings={holdings} />
-      </div>
-
-      {/* Mobile: card layout */}
-      <div className="mt-6 space-y-3 sm:hidden">
-        {holdings.map((h) => (
-          <HoldingCard key={h.id} holding={h} onEdit={onEdit} />
-        ))}
-      </div>
-
-      {/* Desktop: table layout */}
-      <div className="mt-6 hidden overflow-x-auto sm:block">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-foreground/10 text-xs uppercase tracking-wide text-foreground/50">
-              <th scope="col" className="pb-3 pr-4 font-medium">Name</th>
-              <th scope="col" className="pb-3 pr-4 font-medium">Type</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Shares</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Avg Cost</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Current Price</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Market Value</th>
-              <th scope="col" className="pb-3 font-medium"><span className="sr-only">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody className="tabular-nums">
-            {holdings.map((h) => (
-              <tr key={h.id} className="border-b border-foreground/5">
-                <td className="py-3 pr-4">
-                  <div className="font-medium">{h.name}</div>
-                  {h.ticker && (
-                    <div className="text-xs text-foreground/50">{h.ticker}</div>
-                  )}
-                </td>
-                <td className="py-3 pr-4 text-foreground/60">
-                  {ASSET_TYPE_LABELS[h.assetType]}
-                </td>
-                <td className="py-3 pr-4 text-right">{h.shares}</td>
-                <td className="py-3 pr-4 text-right">{formatTHB(h.averageCost)}</td>
-                <td className="py-3 pr-4 text-right">{formatTHB(h.currentPrice)}</td>
-                <td className="py-3 pr-4 text-right font-medium">
-                  {formatTHB(h.shares * h.currentPrice)}
-                </td>
-                <td className="py-3">
-                  <button
-                    type="button"
-                    onClick={() => onEdit(h)}
-                    className="rounded-md p-1.5 text-foreground/40 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-                    aria-label={`Edit ${h.name}`}
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                    </svg>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {portfolios.map((p) => {
+          const { holdingsCount, totalValue } = getPortfolioStats(p.id);
+          return (
+            <PortfolioCard
+              key={p.id}
+              portfolio={p}
+              holdingsCount={holdingsCount}
+              totalValue={totalValue}
+              onEdit={() => onEdit(p)}
+            />
+          );
+        })}
       </div>
     </section>
-  );
-}
-
-function HoldingCard({
-  holding,
-  onEdit,
-}: {
-  holding: Holding;
-  onEdit: (holding: Holding) => void;
-}) {
-  const marketValue = holding.shares * holding.currentPrice;
-
-  return (
-    <article
-      className="rounded-lg border border-foreground/10 px-4 py-3"
-      aria-label={`${holding.name} holding`}
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="font-medium">{holding.name}</div>
-          <div className="mt-0.5 flex items-center gap-2 text-xs text-foreground/50">
-            {holding.ticker && <span className="uppercase">{holding.ticker}</span>}
-            <span>{ASSET_TYPE_LABELS[holding.assetType]}</span>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => onEdit(holding)}
-          className="rounded-md p-1.5 text-foreground/40 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-          aria-label={`Edit ${holding.name}`}
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-          </svg>
-        </button>
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-y-1.5 text-sm tabular-nums">
-        <div className="text-foreground/50">Shares</div>
-        <div className="text-right">{holding.shares}</div>
-
-        <div className="text-foreground/50">Avg Cost</div>
-        <div className="text-right">{formatTHB(holding.averageCost)}</div>
-
-        <div className="text-foreground/50">Current Price</div>
-        <div className="text-right">{formatTHB(holding.currentPrice)}</div>
-
-        <div className="text-foreground/50 font-medium">Market Value</div>
-        <div className="text-right font-medium">{formatTHB(marketValue)}</div>
-      </div>
-    </article>
   );
 }
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <section
-      aria-label="Empty portfolio"
+      aria-label="Empty portfolio list"
       className="flex flex-col items-center justify-center py-24 text-center"
     >
       <div className="rounded-full bg-foreground/5 p-4">
@@ -239,13 +161,13 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+            d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"
           />
         </svg>
       </div>
-      <h2 className="mt-4 text-lg font-semibold">No Holdings Yet</h2>
+      <h2 className="mt-4 text-lg font-semibold">No Portfolios Yet</h2>
       <p className="mt-1 max-w-sm text-sm text-foreground/60">
-        Start building your portfolio by adding your first investment holding.
+        Create your first portfolio to start tracking your investments.
       </p>
       <button
         type="button"
@@ -255,7 +177,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
-        Add Your First Holding
+        Add Your First Portfolio
       </button>
     </section>
   );

@@ -19,8 +19,8 @@ interface PortfolioState {
 }
 
 interface PortfolioActions {
-  addHolding: (holding: Holding) => void;
-  updateHolding: (id: string, updates: Partial<Omit<Holding, "id">>) => void;
+  addHolding: (holding: Omit<Holding, "portfolioId">) => void;
+  updateHolding: (id: string, updates: Partial<Omit<Holding, "id" | "portfolioId">>) => void;
   removeHolding: (id: string) => void;
 }
 
@@ -32,6 +32,7 @@ const PortfolioContext = createContext<PortfolioContextValue | null>(null);
 
 interface HoldingRow {
   id: string;
+  portfolio_id: string;
   name: string;
   ticker: string | null;
   asset_type: AssetType;
@@ -43,6 +44,7 @@ interface HoldingRow {
 function rowToHolding(row: HoldingRow): Holding {
   return {
     id: row.id,
+    portfolioId: row.portfolio_id,
     name: row.name,
     ticker: row.ticker ?? undefined,
     assetType: row.asset_type,
@@ -52,7 +54,12 @@ function rowToHolding(row: HoldingRow): Holding {
   };
 }
 
-export function PortfolioProvider({ children }: { children: React.ReactNode }) {
+interface PortfolioProviderProps {
+  portfolioId: string;
+  children: React.ReactNode;
+}
+
+export function PortfolioProvider({ portfolioId, children }: PortfolioProviderProps) {
   const { user, loading: authLoading } = useAuth();
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +76,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       ? supabase
           .from("holdings")
           .select("*")
+          .eq("portfolio_id", portfolioId)
           .order("created_at", { ascending: true })
           .then(({ data, error }) => {
             if (error) {
@@ -77,7 +85,9 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
             }
             return (data as HoldingRow[]).map(rowToHolding);
           })
-      : Promise.resolve(loadHoldings());
+      : Promise.resolve(
+          loadHoldings().filter((h) => h.portfolioId === portfolioId)
+        );
 
     loadData.then((loaded) => {
       if (stale) return;
@@ -88,14 +98,15 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
     return () => {
       stale = true;
     };
-  }, [user, authLoading]);
+  }, [user, authLoading, portfolioId]);
 
   const addHolding = useCallback(
-    async (holding: Holding) => {
+    async (holding: Omit<Holding, "portfolioId">) => {
       if (user) {
         const { data, error } = await supabase
           .from("holdings")
           .insert({
+            portfolio_id: portfolioId,
             name: holding.name,
             ticker: holding.ticker ?? null,
             asset_type: holding.assetType,
@@ -112,16 +123,18 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         }
         setHoldings((prev) => [...prev, rowToHolding(data as HoldingRow)]);
       } else {
-        const next = [...holdings, holding];
-        setHoldings(next);
+        const newHolding: Holding = { ...holding, portfolioId };
+        const allHoldings = loadHoldings();
+        const next = [...allHoldings, newHolding];
         saveHoldings(next);
+        setHoldings((prev) => [...prev, newHolding]);
       }
     },
-    [user, holdings],
+    [user, portfolioId],
   );
 
   const updateHolding = useCallback(
-    async (id: string, updates: Partial<Omit<Holding, "id">>) => {
+    async (id: string, updates: Partial<Omit<Holding, "id" | "portfolioId">>) => {
       if (user) {
         const dbUpdates: Record<string, unknown> = {};
         if (updates.name !== undefined) dbUpdates.name = updates.name;
@@ -145,14 +158,17 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
           prev.map((h) => (h.id === id ? { ...h, ...updates } : h)),
         );
       } else {
-        const next = holdings.map((h) =>
+        const allHoldings = loadHoldings();
+        const next = allHoldings.map((h) =>
           h.id === id ? { ...h, ...updates } : h,
         );
-        setHoldings(next);
         saveHoldings(next);
+        setHoldings((prev) =>
+          prev.map((h) => (h.id === id ? { ...h, ...updates } : h)),
+        );
       }
     },
-    [user, holdings],
+    [user],
   );
 
   const removeHolding = useCallback(
@@ -169,12 +185,13 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
         }
         setHoldings((prev) => prev.filter((h) => h.id !== id));
       } else {
-        const next = holdings.filter((h) => h.id !== id);
-        setHoldings(next);
+        const allHoldings = loadHoldings();
+        const next = allHoldings.filter((h) => h.id !== id);
         saveHoldings(next);
+        setHoldings((prev) => prev.filter((h) => h.id !== id));
       }
     },
-    [user, holdings],
+    [user],
   );
 
   return (

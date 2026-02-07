@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import { AuthDialog } from "@/components/auth-dialog";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -16,9 +17,9 @@ export function Header() {
           className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8"
           aria-label="Main navigation"
         >
-          <h1 className="text-lg font-semibold tracking-tight">
+          <Link href="/" className="text-lg font-semibold tracking-tight hover:text-foreground/80">
             Investing Portfolio
-          </h1>
+          </Link>
 
           {isSupabaseConfigured && !loading && (
             <div className="flex items-center gap-3">
