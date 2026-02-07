@@ -11,9 +11,11 @@ export default function HomePage() {
   const { holdings, loading, addHolding, updateHolding, removeHolding } = usePortfolio();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingHolding, setEditingHolding] = useState<Holding | null>(null);
+  const [dialogKey, setDialogKey] = useState(0);
 
   function openAdd() {
     setEditingHolding(null);
+    setDialogKey((k) => k + 1); // Force remount to reset form
     setDialogOpen(true);
   }
 
@@ -64,6 +66,7 @@ export default function HomePage() {
       )}
 
       <HoldingDialog
+        key={dialogKey}
         open={dialogOpen}
         holding={editingHolding}
         onSave={handleSave}
