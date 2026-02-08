@@ -7,8 +7,14 @@ export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
   bond: "Bond / Fixed Income",
 };
 
+export interface Portfolio {
+  id: string;
+  name: string;
+}
+
 export interface Holding {
   id: string;
+  portfolioId: string;
   name: string;
   ticker?: string;
   assetType: AssetType;
