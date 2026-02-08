@@ -1,20 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePortfolioList } from "@/context/portfolio-list-context";
-import { Portfolio } from "@/types/portfolio";
+import { useAuth } from "@/context/auth-context";
+import { Holding, Portfolio } from "@/types/portfolio";
 import { loadHoldings } from "@/lib/storage";
+import { supabase } from "@/lib/supabase";
 import { PortfolioCard } from "@/components/portfolio-card";
 import { PortfolioDialog } from "@/components/portfolio-dialog";
 
 export default function HomePage() {
+  const { user } = useAuth();
   const { portfolios, loading, addPortfolio, updatePortfolio, removePortfolio } = usePortfolioList();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
   const [dialogKey, setDialogKey] = useState(0);
+  const [allHoldings, setAllHoldings] = useState<Holding[]>([]);
 
-  // Get holdings count and total value for each portfolio (localStorage only for now)
-  const allHoldings = typeof window !== "undefined" ? loadHoldings() : [];
+  // Load holdings for portfolio stats
+  useEffect(() => {
+    if (loading) return;
+
+    if (user) {
+      // Load from Supabase
+      supabase
+        .from("holdings")
+        .select("id, portfolio_id, shares, current_price")
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("Failed to load holdings:", error.message);
+            return;
+          }
+          const holdings = (data ?? []).map((row) => ({
+            id: row.id,
+            portfolioId: row.portfolio_id,
+            shares: Number(row.shares),
+            currentPrice: Number(row.current_price),
+          })) as Holding[];
+          setAllHoldings(holdings);
+        });
+    } else {
+      // Load from localStorage
+      setAllHoldings(loadHoldings());
+    }
+  }, [user, loading]);
 
   function getPortfolioStats(portfolioId: string) {
     const portfolioHoldings = allHoldings.filter((h) => h.portfolioId === portfolioId);
