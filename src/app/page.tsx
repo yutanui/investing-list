@@ -1,22 +1,63 @@
 "use client";
 
-import { useState } from "react";
-import { usePortfolio } from "@/context/portfolio-context";
-import { Holding, ASSET_TYPE_LABELS } from "@/types/portfolio";
-import { formatTHB, formatPercent, formatAllocation } from "@/lib/format";
-import { HoldingDialog } from "@/components/holding-dialog";
-import { PortfolioSummary } from "@/components/portfolio-summary";
+import { useState, useEffect } from "react";
+import { usePortfolioList } from "@/context/portfolio-list-context";
+import { useAuth } from "@/context/auth-context";
+import { Holding, Portfolio } from "@/types/portfolio";
+import { loadHoldings } from "@/lib/storage";
+import { supabase } from "@/lib/supabase";
+import { PortfolioCard } from "@/components/portfolio-card";
+import { PortfolioDialog } from "@/components/portfolio-dialog";
 
 export default function HomePage() {
   const { user } = useAuth();
   const { portfolios, loading, addPortfolio, updatePortfolio, removePortfolio } = usePortfolioList();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingHolding, setEditingHolding] = useState<Holding | null>(null);
+  const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
   const [dialogKey, setDialogKey] = useState(0);
+  const [allHoldings, setAllHoldings] = useState<Holding[]>([]);
+
+  // Load holdings for portfolio stats
+  useEffect(() => {
+    if (loading) return;
+
+    if (user) {
+      // Load from Supabase
+      supabase
+        .from("holdings")
+        .select("id, portfolio_id, shares, current_price")
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("Failed to load holdings:", error.message);
+            return;
+          }
+          const holdings = (data ?? []).map((row) => ({
+            id: row.id,
+            portfolioId: row.portfolio_id,
+            shares: Number(row.shares),
+            currentPrice: Number(row.current_price),
+          })) as Holding[];
+          setAllHoldings(holdings);
+        });
+    } else {
+      // Load from localStorage
+      setAllHoldings(loadHoldings());
+    }
+  }, [user, loading]);
+
+  function getPortfolioStats(portfolioId: string) {
+    const portfolioHoldings = allHoldings.filter((h) => h.portfolioId === portfolioId);
+    const holdingsCount = portfolioHoldings.length;
+    const totalValue = portfolioHoldings.reduce(
+      (sum, h) => sum + h.shares * h.currentPrice,
+      0
+    );
+    return { holdingsCount, totalValue };
+  }
 
   function openAdd() {
-    setEditingHolding(null);
-    setDialogKey((k) => k + 1); // Force remount to reset form
+    setEditingPortfolio(null);
+    setDialogKey((k) => k + 1);
     setDialogOpen(true);
   }
 
@@ -67,7 +108,7 @@ export default function HomePage() {
         />
       )}
 
-      <HoldingDialog
+      <PortfolioDialog
         key={dialogKey}
         open={dialogOpen}
         portfolio={editingPortfolio}
@@ -90,12 +131,6 @@ function PortfolioListView({
   onAdd: () => void;
   onEdit: (portfolio: Portfolio) => void;
 }) {
-  // Calculate total market value for allocation %
-  const totalMarketValue = holdings.reduce(
-    (sum, h) => sum + h.shares * h.currentPrice,
-    0,
-  );
-
   return (
     <section aria-label="Portfolio list">
       <div className="flex items-center justify-between">
@@ -119,156 +154,21 @@ function PortfolioListView({
         </button>
       </div>
 
-      <div className="mt-6">
-        <PortfolioSummary holdings={holdings} />
-      </div>
-
-      {/* Mobile: card layout */}
-      <div className="mt-6 space-y-3 sm:hidden">
-        {holdings.map((h) => (
-          <HoldingCard
-            key={h.id}
-            holding={h}
-            totalMarketValue={totalMarketValue}
-            onEdit={onEdit}
-          />
-        ))}
-      </div>
-
-      {/* Desktop: table layout */}
-      <div className="mt-6 hidden overflow-x-auto sm:block">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-foreground/10 text-xs uppercase tracking-wide text-foreground/50">
-              <th scope="col" className="pb-3 pr-4 font-medium">Name</th>
-              <th scope="col" className="pb-3 pr-4 font-medium">Type</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Shares</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Avg Cost</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Price</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Value</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Gain/Loss</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">%</th>
-              <th scope="col" className="pb-3 font-medium"><span className="sr-only">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody className="tabular-nums">
-            {holdings.map((h) => {
-              const marketValue = h.shares * h.currentPrice;
-              const totalCost = h.shares * h.averageCost;
-              const gainLoss = marketValue - totalCost;
-              const gainLossPercent = h.averageCost > 0 ? (h.currentPrice - h.averageCost) / h.averageCost : 0;
-              const allocation = totalMarketValue > 0 ? marketValue / totalMarketValue : 0;
-              const gainLossColor = gainLoss > 0 ? "text-gain" : gainLoss < 0 ? "text-loss" : "";
-
-              return (
-                <tr key={h.id} className="border-b border-foreground/5">
-                  <td className="py-3 pr-4">
-                    <div className="font-medium">{h.name}</div>
-                    {h.ticker && (
-                      <div className="text-xs text-foreground/50">{h.ticker}</div>
-                    )}
-                  </td>
-                  <td className="py-3 pr-4 text-foreground/60">
-                    {ASSET_TYPE_LABELS[h.assetType]}
-                  </td>
-                  <td className="py-3 pr-4 text-right">{h.shares}</td>
-                  <td className="py-3 pr-4 text-right">{formatTHB(h.averageCost)}</td>
-                  <td className="py-3 pr-4 text-right">{formatTHB(h.currentPrice)}</td>
-                  <td className="py-3 pr-4 text-right">
-                    <div className="font-medium">{formatTHB(marketValue)}</div>
-                    <div className="text-xs text-foreground/50">{formatAllocation(allocation)}</div>
-                  </td>
-                  <td className={`py-3 pr-4 text-right ${gainLossColor}`}>
-                    {formatTHB(gainLoss)}
-                  </td>
-                  <td className={`py-3 pr-4 text-right ${gainLossColor}`}>
-                    {formatPercent(gainLossPercent)}
-                  </td>
-                  <td className="py-3">
-                    <button
-                      type="button"
-                      onClick={() => onEdit(h)}
-                      className="rounded-md p-1.5 text-foreground/40 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-                      aria-label={`Edit ${h.name}`}
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {portfolios.map((p) => {
+          const { holdingsCount, totalValue } = getPortfolioStats(p.id);
+          return (
+            <PortfolioCard
+              key={p.id}
+              portfolio={p}
+              holdingsCount={holdingsCount}
+              totalValue={totalValue}
+              onEdit={() => onEdit(p)}
+            />
+          );
+        })}
       </div>
     </section>
-  );
-}
-
-function HoldingCard({
-  holding,
-  totalMarketValue,
-  onEdit,
-}: {
-  holding: Holding;
-  totalMarketValue: number;
-  onEdit: (holding: Holding) => void;
-}) {
-  const marketValue = holding.shares * holding.currentPrice;
-  const totalCost = holding.shares * holding.averageCost;
-  const gainLoss = marketValue - totalCost;
-  const gainLossPercent = holding.averageCost > 0 ? (holding.currentPrice - holding.averageCost) / holding.averageCost : 0;
-  const allocation = totalMarketValue > 0 ? marketValue / totalMarketValue : 0;
-  const gainLossColor = gainLoss > 0 ? "text-gain" : gainLoss < 0 ? "text-loss" : "";
-
-  return (
-    <article
-      className="rounded-lg border border-foreground/10 px-4 py-3"
-      aria-label={`${holding.name} holding`}
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="font-medium">{holding.name}</div>
-          <div className="mt-0.5 flex items-center gap-2 text-xs text-foreground/50">
-            {holding.ticker && <span className="uppercase">{holding.ticker}</span>}
-            <span>{ASSET_TYPE_LABELS[holding.assetType]}</span>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => onEdit(holding)}
-          className="rounded-md p-1.5 text-foreground/40 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-          aria-label={`Edit ${holding.name}`}
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-          </svg>
-        </button>
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-y-1.5 text-sm tabular-nums">
-        <div className="text-foreground/50">Shares</div>
-        <div className="text-right">{holding.shares}</div>
-
-        <div className="text-foreground/50">Avg Cost</div>
-        <div className="text-right">{formatTHB(holding.averageCost)}</div>
-
-        <div className="text-foreground/50">Current Price</div>
-        <div className="text-right">{formatTHB(holding.currentPrice)}</div>
-
-        <div className="text-foreground/50 font-medium">Market Value</div>
-        <div className="text-right font-medium">{formatTHB(marketValue)}</div>
-
-        <div className="text-foreground/50">Allocation</div>
-        <div className="text-right">{formatAllocation(allocation)}</div>
-
-        <div className="text-foreground/50">Gain/Loss</div>
-        <div className={`text-right ${gainLossColor}`}>
-          {formatTHB(gainLoss)} ({formatPercent(gainLossPercent)})
-        </div>
-      </div>
-    </article>
   );
 }
 
