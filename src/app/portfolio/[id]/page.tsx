@@ -65,6 +65,7 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
 
   function openEdit(holding: Holding) {
     setEditingHolding(holding);
+    setDialogKey((k) => k + 1);
     setDialogOpen(true);
   }
 
