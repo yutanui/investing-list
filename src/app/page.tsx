@@ -9,6 +9,7 @@ import { toTHB } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { PortfolioCard } from "@/components/portfolio-card";
 import { PortfolioDialog } from "@/components/portfolio-dialog";
+import { PortfolioSummary } from "@/components/portfolio-summary";
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -26,7 +27,7 @@ export default function HomePage() {
       // Load from Supabase
       supabase
         .from("holdings")
-        .select("id, portfolio_id, shares, current_price, current_price_currency")
+        .select("id, portfolio_id, shares, current_price, current_price_currency, average_cost, average_cost_currency")
         .then(({ data, error }) => {
           if (error) {
             console.error("Failed to load holdings:", error.message);
@@ -38,6 +39,8 @@ export default function HomePage() {
             shares: Number(row.shares),
             currentPrice: Number(row.current_price),
             currentPriceCurrency: (row.current_price_currency ?? "THB") as Currency,
+            averageCost: Number(row.average_cost),
+            averageCostCurrency: (row.average_cost_currency ?? "THB") as Currency,
           })) as Holding[];
           setAllHoldings(holdings);
         });
@@ -55,7 +58,13 @@ export default function HomePage() {
       (sum, h) => sum + h.shares * toTHB(h.currentPrice, h.currentPriceCurrency),
       0
     );
-    return { holdingsCount, totalValue };
+    const totalCost = portfolioHoldings.reduce(
+      (sum, h) => sum + h.shares * toTHB(h.averageCost, h.averageCostCurrency),
+      0
+    );
+    const gainLoss = totalValue - totalCost;
+    const gainLossPercent = totalCost > 0 ? gainLoss / totalCost : 0;
+    return { holdingsCount, totalValue, totalCost, gainLoss, gainLossPercent };
   }
 
   function openAdd() {
@@ -105,6 +114,7 @@ export default function HomePage() {
       ) : (
         <PortfolioListView
           portfolios={portfolios}
+          allHoldings={allHoldings}
           getPortfolioStats={getPortfolioStats}
           onAdd={openAdd}
           onEdit={openEdit}
@@ -125,12 +135,14 @@ export default function HomePage() {
 
 function PortfolioListView({
   portfolios,
+  allHoldings,
   getPortfolioStats,
   onAdd,
   onEdit,
 }: {
   portfolios: Portfolio[];
-  getPortfolioStats: (id: string) => { holdingsCount: number; totalValue: number };
+  allHoldings: Holding[];
+  getPortfolioStats: (id: string) => { holdingsCount: number; totalValue: number; totalCost: number; gainLoss: number; gainLossPercent: number };
   onAdd: () => void;
   onEdit: (portfolio: Portfolio) => void;
 }) {
@@ -157,15 +169,24 @@ function PortfolioListView({
         </button>
       </div>
 
+      {allHoldings.length > 0 && (
+        <div className="mt-6">
+          <PortfolioSummary holdings={allHoldings} />
+        </div>
+      )}
+
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {portfolios.map((p) => {
-          const { holdingsCount, totalValue } = getPortfolioStats(p.id);
+          const { holdingsCount, totalValue, totalCost, gainLoss, gainLossPercent } = getPortfolioStats(p.id);
           return (
             <PortfolioCard
               key={p.id}
               portfolio={p}
               holdingsCount={holdingsCount}
               totalValue={totalValue}
+              totalCost={totalCost}
+              gainLoss={gainLoss}
+              gainLossPercent={gainLossPercent}
               onEdit={() => onEdit(p)}
             />
           );
