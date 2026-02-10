@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { Portfolio } from "@/types/portfolio";
-import { formatTHB } from "@/lib/format";
+import { formatTHB, formatPercent } from "@/lib/format";
 
 interface PortfolioCardProps {
   portfolio: Portfolio;
   holdingsCount: number;
   totalValue: number;
+  totalCost: number;
+  gainLoss: number;
+  gainLossPercent: number;
   onEdit: () => void;
 }
 
@@ -15,8 +18,18 @@ export function PortfolioCard({
   portfolio,
   holdingsCount,
   totalValue,
+  totalCost,
+  gainLoss,
+  gainLossPercent,
   onEdit,
 }: PortfolioCardProps) {
+  const gainLossColor =
+    gainLoss > 0
+      ? "text-gain"
+      : gainLoss < 0
+        ? "text-loss"
+        : "text-foreground/60";
+
   return (
     <article className="relative rounded-lg border border-foreground/10 bg-background p-4 hover:border-foreground/20">
       <Link
@@ -51,6 +64,14 @@ export function PortfolioCard({
 
       <div className="relative z-10 mt-3 text-right">
         <span className="text-lg font-semibold tabular-nums">{formatTHB(totalValue)}</span>
+        {holdingsCount > 0 && (
+          <div className="mt-1 text-xs text-foreground/50">
+            <span>Cost {formatTHB(totalCost)}</span>
+            <span className={`ml-2 font-medium ${gainLossColor}`}>
+              {formatTHB(gainLoss)} ({formatPercent(gainLossPercent)})
+            </span>
+          </div>
+        )}
       </div>
     </article>
   );
