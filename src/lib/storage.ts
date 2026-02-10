@@ -1,4 +1,4 @@
-import { Holding, Portfolio } from "@/types/portfolio";
+import { Holding, Portfolio, Currency } from "@/types/portfolio";
 
 /**
  * Versioned localStorage utility.
@@ -63,7 +63,15 @@ export function loadHoldings(): Holding[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed as Holding[];
+
+    // Ensure currency fields exist (migration for existing holdings)
+    const holdings = (parsed as Record<string, unknown>[]).map((h) => ({
+      ...h,
+      averageCostCurrency: (h.averageCostCurrency as Currency) ?? "THB",
+      currentPriceCurrency: (h.currentPriceCurrency as Currency) ?? "THB",
+    })) as Holding[];
+
+    return holdings;
   } catch {
     return [];
   }
@@ -126,11 +134,13 @@ function migrateLocalStorage(): void {
       name: "My Portfolio",
     };
 
-    // Migrate holdings with portfolioId
+    // Migrate holdings with portfolioId and default currency (THB)
     const migratedHoldings: Holding[] = legacyHoldings.map((h) => ({
       ...h,
       portfolioId: defaultPortfolio.id,
       assetType: h.assetType as Holding["assetType"],
+      averageCostCurrency: "THB" as Currency,
+      currentPriceCurrency: "THB" as Currency,
     }));
 
     // Save migrated data

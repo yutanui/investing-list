@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, use, useCallback, useEffect, useState } from "react";
-import { Holding, AssetType } from "@/types/portfolio";
+import { Holding, AssetType, Currency } from "@/types/portfolio";
 import { loadHoldings, saveHoldings } from "@/lib/storage";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
@@ -38,7 +38,9 @@ interface HoldingRow {
   asset_type: AssetType;
   shares: number;
   avg_cost: number;
+  avg_cost_currency: Currency;
   current_price: number;
+  current_price_currency: Currency;
 }
 
 function rowToHolding(row: HoldingRow): Holding {
@@ -50,7 +52,9 @@ function rowToHolding(row: HoldingRow): Holding {
     assetType: row.asset_type,
     shares: Number(row.shares),
     averageCost: Number(row.avg_cost),
+    averageCostCurrency: row.avg_cost_currency ?? "THB",
     currentPrice: Number(row.current_price),
+    currentPriceCurrency: row.current_price_currency ?? "THB",
   };
 }
 
@@ -112,7 +116,9 @@ export function PortfolioProvider({ portfolioId, children }: PortfolioProviderPr
             asset_type: holding.assetType,
             shares: holding.shares,
             avg_cost: holding.averageCost,
+            avg_cost_currency: holding.averageCostCurrency,
             current_price: holding.currentPrice,
+            current_price_currency: holding.currentPriceCurrency,
           })
           .select()
           .single();
@@ -142,7 +148,9 @@ export function PortfolioProvider({ portfolioId, children }: PortfolioProviderPr
         if (updates.assetType !== undefined) dbUpdates.asset_type = updates.assetType;
         if (updates.shares !== undefined) dbUpdates.shares = updates.shares;
         if (updates.averageCost !== undefined) dbUpdates.avg_cost = updates.averageCost;
+        if (updates.averageCostCurrency !== undefined) dbUpdates.avg_cost_currency = updates.averageCostCurrency;
         if (updates.currentPrice !== undefined) dbUpdates.current_price = updates.currentPrice;
+        if (updates.currentPriceCurrency !== undefined) dbUpdates.current_price_currency = updates.currentPriceCurrency;
         dbUpdates.updated_at = new Date().toISOString();
 
         const { error } = await supabase

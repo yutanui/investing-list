@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Holding, AssetType, ASSET_TYPE_LABELS } from "@/types/portfolio";
+import { Holding, AssetType, Currency, ASSET_TYPE_LABELS, CURRENCY_LABELS } from "@/types/portfolio";
 
 // Holding data without portfolioId - the context adds it
 type HoldingFormData = Omit<Holding, "portfolioId">;
@@ -15,6 +15,7 @@ interface HoldingDialogProps {
 }
 
 const ASSET_TYPES = Object.entries(ASSET_TYPE_LABELS) as [AssetType, string][];
+const CURRENCIES = Object.entries(CURRENCY_LABELS) as [Currency, string][];
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -76,7 +77,9 @@ export function HoldingDialog({
       assetType: formData.get("assetType") as AssetType,
       shares: Number(formData.get("shares")),
       averageCost: Number(formData.get("averageCost")),
+      averageCostCurrency: formData.get("averageCostCurrency") as Currency,
       currentPrice: Number(formData.get("currentPrice")),
+      currentPriceCurrency: formData.get("currentPriceCurrency") as Currency,
     };
 
     onSave(saved);
@@ -197,41 +200,69 @@ export function HoldingDialog({
             {/* Average Cost */}
             <div>
               <label htmlFor="holding-avg-cost" className="block text-sm font-medium">
-                Average Cost <span className="font-normal text-foreground/50">(THB per unit)</span>
+                Average Cost <span className="font-normal text-foreground/50">(per unit)</span>
               </label>
-              <input
-                id="holding-avg-cost"
-                name="averageCost"
-                type="number"
-                inputMode="decimal"
-                required
-                min="0"
-                step="any"
-                defaultValue={holding?.averageCost ?? ""}
-                placeholder="e.g. 120.50…"
-                autoComplete="off"
-                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-              />
+              <div className="mt-1 flex gap-2">
+                <input
+                  id="holding-avg-cost"
+                  name="averageCost"
+                  type="number"
+                  inputMode="decimal"
+                  required
+                  min="0"
+                  step="any"
+                  defaultValue={holding?.averageCost ?? ""}
+                  placeholder="e.g. 120.50…"
+                  autoComplete="off"
+                  className="block flex-1 rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                />
+                <select
+                  id="holding-avg-cost-currency"
+                  name="averageCostCurrency"
+                  defaultValue={holding?.averageCostCurrency ?? "THB"}
+                  className="w-20 rounded-md border border-foreground/20 bg-transparent px-2 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                >
+                  {CURRENCIES.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Current Price */}
             <div>
               <label htmlFor="holding-current-price" className="block text-sm font-medium">
-                Current Price <span className="font-normal text-foreground/50">(THB per unit)</span>
+                Current Price <span className="font-normal text-foreground/50">(per unit)</span>
               </label>
-              <input
-                id="holding-current-price"
-                name="currentPrice"
-                type="number"
-                inputMode="decimal"
-                required
-                min="0"
-                step="any"
-                defaultValue={holding?.currentPrice ?? ""}
-                placeholder="e.g. 135.00…"
-                autoComplete="off"
-                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-              />
+              <div className="mt-1 flex gap-2">
+                <input
+                  id="holding-current-price"
+                  name="currentPrice"
+                  type="number"
+                  inputMode="decimal"
+                  required
+                  min="0"
+                  step="any"
+                  defaultValue={holding?.currentPrice ?? ""}
+                  placeholder="e.g. 135.00…"
+                  autoComplete="off"
+                  className="block flex-1 rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                />
+                <select
+                  id="holding-current-price-currency"
+                  name="currentPriceCurrency"
+                  defaultValue={holding?.currentPriceCurrency ?? "THB"}
+                  className="w-20 rounded-md border border-foreground/20 bg-transparent px-2 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                >
+                  {CURRENCIES.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
