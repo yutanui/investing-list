@@ -38,7 +38,7 @@ export function PortfolioCard({
         aria-label={`View ${portfolio.name}`}
       />
 
-      <div className="relative z-10 flex items-start justify-between">
+      <div className="relative z-10 flex items-start justify-between pointer-events-none">
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-base font-semibold">{portfolio.name}</h3>
           <p className="mt-1 text-sm text-foreground/60">
@@ -53,7 +53,7 @@ export function PortfolioCard({
             e.stopPropagation();
             onEdit();
           }}
-          className="ml-3 rounded-md p-1.5 text-foreground/50 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+          className="pointer-events-auto ml-3 rounded-md p-1.5 text-foreground/50 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
           aria-label={`Edit ${portfolio.name}`}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
@@ -62,7 +62,7 @@ export function PortfolioCard({
         </button>
       </div>
 
-      <div className="relative z-10 mt-3 text-right">
+      <div className="relative z-10 mt-3 text-right pointer-events-none">
         <span className="text-lg font-semibold tabular-nums">{formatTHB(totalValue)}</span>
         {holdingsCount > 0 && (
           <div className="mt-1 text-xs text-foreground/50">
