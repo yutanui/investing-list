@@ -1,5 +1,5 @@
 import { Holding } from "@/types/portfolio";
-import { formatTHB, formatPercent } from "@/lib/format";
+import { formatTHB, formatPercent, toTHB } from "@/lib/format";
 
 interface PortfolioSummaryProps {
   holdings: Holding[];
@@ -7,12 +7,13 @@ interface PortfolioSummaryProps {
 
 export function PortfolioSummary({ holdings }: PortfolioSummaryProps) {
   // Derived state — calculated during render, no effects needed
+  // All values converted to THB for consistent display
   const totalMarketValue = holdings.reduce(
-    (sum, h) => sum + h.shares * h.currentPrice,
+    (sum, h) => sum + h.shares * toTHB(h.currentPrice, h.currentPriceCurrency),
     0,
   );
   const totalCost = holdings.reduce(
-    (sum, h) => sum + h.shares * h.averageCost,
+    (sum, h) => sum + h.shares * toTHB(h.averageCost, h.averageCostCurrency),
     0,
   );
   const gainLoss = totalMarketValue - totalCost;

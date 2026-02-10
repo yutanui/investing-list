@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { usePortfolioList } from "@/context/portfolio-list-context";
 import { useAuth } from "@/context/auth-context";
-import { Holding, Portfolio } from "@/types/portfolio";
+import { Holding, Portfolio, Currency } from "@/types/portfolio";
 import { loadHoldings } from "@/lib/storage";
+import { toTHB } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import { PortfolioCard } from "@/components/portfolio-card";
 import { PortfolioDialog } from "@/components/portfolio-dialog";
@@ -25,7 +26,7 @@ export default function HomePage() {
       // Load from Supabase
       supabase
         .from("holdings")
-        .select("id, portfolio_id, shares, current_price")
+        .select("id, portfolio_id, shares, current_price, current_price_currency")
         .then(({ data, error }) => {
           if (error) {
             console.error("Failed to load holdings:", error.message);
@@ -36,6 +37,7 @@ export default function HomePage() {
             portfolioId: row.portfolio_id,
             shares: Number(row.shares),
             currentPrice: Number(row.current_price),
+            currentPriceCurrency: (row.current_price_currency ?? "THB") as Currency,
           })) as Holding[];
           setAllHoldings(holdings);
         });
@@ -48,8 +50,9 @@ export default function HomePage() {
   function getPortfolioStats(portfolioId: string) {
     const portfolioHoldings = allHoldings.filter((h) => h.portfolioId === portfolioId);
     const holdingsCount = portfolioHoldings.length;
+    // Convert to THB for consistent display
     const totalValue = portfolioHoldings.reduce(
-      (sum, h) => sum + h.shares * h.currentPrice,
+      (sum, h) => sum + h.shares * toTHB(h.currentPrice, h.currentPriceCurrency),
       0
     );
     return { holdingsCount, totalValue };

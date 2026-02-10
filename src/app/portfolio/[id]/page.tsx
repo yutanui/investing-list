@@ -5,7 +5,7 @@ import Link from "next/link";
 import { PortfolioProvider, usePortfolio } from "@/context/portfolio-context";
 import { usePortfolioList } from "@/context/portfolio-list-context";
 import { Holding, ASSET_TYPE_LABELS } from "@/types/portfolio";
-import { formatTHB, formatPercent, formatAllocation } from "@/lib/format";
+import { formatTHB, formatPercent, formatAllocation, toTHB } from "@/lib/format";
 import { HoldingDialog } from "@/components/holding-dialog";
 import { PortfolioSummary } from "@/components/portfolio-summary";
 
@@ -146,9 +146,9 @@ function PortfolioHoldingsView({
   onAdd: () => void;
   onEdit: (holding: Holding) => void;
 }) {
-  // Calculate total market value for allocation %
+  // Calculate total market value for allocation % (all converted to THB)
   const totalMarketValue = holdings.reduce(
-    (sum, h) => sum + h.shares * h.currentPrice,
+    (sum, h) => sum + h.shares * toTHB(h.currentPrice, h.currentPriceCurrency),
     0
   );
 
@@ -204,10 +204,13 @@ function PortfolioHoldingsView({
           </thead>
           <tbody className="tabular-nums">
             {holdings.map((h) => {
-              const marketValue = h.shares * h.currentPrice;
-              const totalCost = h.shares * h.averageCost;
+              // Convert to THB for consistent display
+              const avgCostTHB = toTHB(h.averageCost, h.averageCostCurrency);
+              const currentPriceTHB = toTHB(h.currentPrice, h.currentPriceCurrency);
+              const marketValue = h.shares * currentPriceTHB;
+              const totalCost = h.shares * avgCostTHB;
               const gainLoss = marketValue - totalCost;
-              const gainLossPercent = h.averageCost > 0 ? (h.currentPrice - h.averageCost) / h.averageCost : 0;
+              const gainLossPercent = totalCost > 0 ? gainLoss / totalCost : 0;
               const allocation = totalMarketValue > 0 ? marketValue / totalMarketValue : 0;
               const gainLossColor = gainLoss > 0 ? "text-gain" : gainLoss < 0 ? "text-loss" : "";
 
@@ -223,8 +226,8 @@ function PortfolioHoldingsView({
                     {ASSET_TYPE_LABELS[h.assetType]}
                   </td>
                   <td className="py-3 pr-4 text-right">{h.shares}</td>
-                  <td className="py-3 pr-4 text-right">{formatTHB(h.averageCost)}</td>
-                  <td className="py-3 pr-4 text-right">{formatTHB(h.currentPrice)}</td>
+                  <td className="py-3 pr-4 text-right">{formatTHB(avgCostTHB)}</td>
+                  <td className="py-3 pr-4 text-right">{formatTHB(currentPriceTHB)}</td>
                   <td className="py-3 pr-4 text-right">
                     <div className="font-medium">{formatTHB(marketValue)}</div>
                     <div className="text-xs text-foreground/50">{formatAllocation(allocation)}</div>
@@ -266,10 +269,13 @@ function HoldingCard({
   totalMarketValue: number;
   onEdit: (holding: Holding) => void;
 }) {
-  const marketValue = holding.shares * holding.currentPrice;
-  const totalCost = holding.shares * holding.averageCost;
+  // Convert to THB for consistent display
+  const avgCostTHB = toTHB(holding.averageCost, holding.averageCostCurrency);
+  const currentPriceTHB = toTHB(holding.currentPrice, holding.currentPriceCurrency);
+  const marketValue = holding.shares * currentPriceTHB;
+  const totalCost = holding.shares * avgCostTHB;
   const gainLoss = marketValue - totalCost;
-  const gainLossPercent = holding.averageCost > 0 ? (holding.currentPrice - holding.averageCost) / holding.averageCost : 0;
+  const gainLossPercent = totalCost > 0 ? gainLoss / totalCost : 0;
   const allocation = totalMarketValue > 0 ? marketValue / totalMarketValue : 0;
   const gainLossColor = gainLoss > 0 ? "text-gain" : gainLoss < 0 ? "text-loss" : "";
 
@@ -303,10 +309,10 @@ function HoldingCard({
         <div className="text-right">{holding.shares}</div>
 
         <div className="text-foreground/50">Avg Cost</div>
-        <div className="text-right">{formatTHB(holding.averageCost)}</div>
+        <div className="text-right">{formatTHB(avgCostTHB)}</div>
 
         <div className="text-foreground/50">Current Price</div>
-        <div className="text-right">{formatTHB(holding.currentPrice)}</div>
+        <div className="text-right">{formatTHB(currentPriceTHB)}</div>
 
         <div className="text-foreground/50 font-medium">Market Value</div>
         <div className="text-right font-medium">{formatTHB(marketValue)}</div>

@@ -6,6 +6,11 @@
  * - Use Intl.NumberFormat for numbers with locale-aware separators
  */
 
+import type { Currency } from "@/types/portfolio";
+
+// Fixed exchange rate: 1 USD = 32 THB
+export const USD_TO_THB_RATE = 32;
+
 const thbFormatter = new Intl.NumberFormat("th-TH", {
   style: "currency",
   currency: "THB",
@@ -36,4 +41,12 @@ export function formatPercent(ratio: number): string {
 
 export function formatAllocation(ratio: number): string {
   return percentFormatterNoSign.format(ratio);
+}
+
+/**
+ * Convert amount to THB based on currency.
+ * If already THB, returns as-is. If USD, converts using fixed rate.
+ */
+export function toTHB(amount: number, currency: Currency): number {
+  return currency === "USD" ? amount * USD_TO_THB_RATE : amount;
 }
