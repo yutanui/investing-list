@@ -216,7 +216,18 @@ function PortfolioHoldingsView({
               const gainLossColor = gainLoss > 0 ? "text-gain" : gainLoss < 0 ? "text-loss" : "";
 
               return (
-                <tr key={h.id} className="border-b border-foreground/5">
+                <tr
+                  key={h.id}
+                  onClick={() => onEdit(h)}
+                  className="cursor-pointer border-b border-foreground/5 transition-colors hover:bg-foreground/[0.02]"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onEdit(h);
+                    }
+                  }}
+                >
                   <td className="py-3 pr-4">
                     <div className="font-medium">{h.name}</div>
                     {h.ticker && (
@@ -240,16 +251,11 @@ function PortfolioHoldingsView({
                     {formatPercent(gainLossPercent)}
                   </td>
                   <td className="py-3">
-                    <button
-                      type="button"
-                      onClick={() => onEdit(h)}
-                      className="rounded-md p-1.5 text-foreground/40 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-                      aria-label={`Edit ${h.name}`}
-                    >
+                    <div className="rounded-md p-1.5 text-foreground/40">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                       </svg>
-                    </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -282,8 +288,17 @@ function HoldingCard({
 
   return (
     <article
-      className="rounded-lg border border-foreground/10 px-4 py-3"
-      aria-label={`${holding.name} holding`}
+      onClick={() => onEdit(holding)}
+      className="cursor-pointer rounded-lg border border-foreground/10 px-4 py-3 transition-colors hover:border-foreground/20 hover:bg-foreground/[0.02]"
+      aria-label={`Edit ${holding.name} holding`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onEdit(holding);
+        }
+      }}
     >
       <div className="flex items-start justify-between">
         <div>
@@ -293,16 +308,11 @@ function HoldingCard({
             <span>{ASSET_TYPE_LABELS[holding.assetType]}</span>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => onEdit(holding)}
-          className="rounded-md p-1.5 text-foreground/40 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-          aria-label={`Edit ${holding.name}`}
-        >
+        <div className="rounded-md p-1.5 text-foreground/40">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
           </svg>
-        </button>
+        </div>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-y-1.5 text-sm tabular-nums">
