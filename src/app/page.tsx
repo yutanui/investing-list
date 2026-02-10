@@ -27,7 +27,7 @@ export default function HomePage() {
       // Load from Supabase
       supabase
         .from("holdings")
-        .select("id, portfolio_id, shares, current_price, current_price_currency, average_cost, average_cost_currency")
+        .select("id, portfolio_id, shares, current_price, current_price_currency, avg_cost, avg_cost_currency")
         .then(({ data, error }) => {
           if (error) {
             console.error("Failed to load holdings:", error.message);
@@ -39,8 +39,8 @@ export default function HomePage() {
             shares: Number(row.shares),
             currentPrice: Number(row.current_price),
             currentPriceCurrency: (row.current_price_currency ?? "THB") as Currency,
-            averageCost: Number(row.average_cost),
-            averageCostCurrency: (row.average_cost_currency ?? "THB") as Currency,
+            averageCost: Number(row.avg_cost),
+            averageCostCurrency: (row.avg_cost_currency ?? "THB") as Currency,
           })) as Holding[];
           setAllHoldings(holdings);
         });
