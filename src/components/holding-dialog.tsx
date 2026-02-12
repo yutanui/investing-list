@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { Holding, AssetType, Currency, ASSET_TYPE_LABELS, CURRENCY_LABELS } from "@/types/portfolio";
+import { Holding, AssetType, HoldingType, Currency, ASSET_TYPE_LABELS, HOLDING_TYPE_LABELS, CURRENCY_LABELS } from "@/types/portfolio";
 
 // Holding data without portfolioId - the context adds it
 type HoldingFormData = Omit<Holding, "portfolioId">;
@@ -15,6 +15,7 @@ interface HoldingDialogProps {
 }
 
 const ASSET_TYPES = Object.entries(ASSET_TYPE_LABELS) as [AssetType, string][];
+const HOLDING_TYPES = Object.entries(HOLDING_TYPE_LABELS) as [HoldingType, string][];
 const CURRENCIES = Object.entries(CURRENCY_LABELS) as [Currency, string][];
 
 function generateId(): string {
@@ -75,6 +76,7 @@ export function HoldingDialog({
       name: (formData.get("name") as string).trim(),
       ticker: (formData.get("ticker") as string).trim() || undefined,
       assetType: formData.get("assetType") as AssetType,
+      holdingType: formData.get("holdingType") as HoldingType,
       shares: Number(formData.get("shares")),
       averageCost: Number(formData.get("averageCost")),
       averageCostCurrency: formData.get("averageCostCurrency") as Currency,
@@ -170,6 +172,26 @@ export function HoldingDialog({
                 className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
               >
                 {ASSET_TYPES.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Holding Type */}
+            <div>
+              <label htmlFor="holding-type" className="block text-sm font-medium">
+                Type
+              </label>
+              <select
+                id="holding-type"
+                name="holdingType"
+                required
+                defaultValue={holding?.holdingType ?? "core"}
+                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+              >
+                {HOLDING_TYPES.map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>

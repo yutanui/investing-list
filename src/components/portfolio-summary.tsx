@@ -1,4 +1,4 @@
-import { Holding } from "@/types/portfolio";
+import { Holding, HoldingType } from "@/types/portfolio";
 import { formatTHB, formatPercent, toTHB } from "@/lib/format";
 
 interface PortfolioSummaryProps {
@@ -19,6 +19,14 @@ export function PortfolioSummary({ holdings }: PortfolioSummaryProps) {
   const gainLoss = totalMarketValue - totalCost;
   const returnPct = totalCost > 0 ? gainLoss / totalCost : 0;
 
+  // Type breakdown
+  const typeValues = (["core", "satellite"] as HoldingType[]).map((type) => {
+    const value = holdings
+      .filter((h) => (h.holdingType ?? "core") === type)
+      .reduce((sum, h) => sum + h.shares * toTHB(h.currentPrice, h.currentPriceCurrency), 0);
+    return { type, value, percent: totalMarketValue > 0 ? value / totalMarketValue : 0 };
+  });
+
   const gainLossColor =
     gainLoss > 0
       ? "text-gain"
@@ -27,20 +35,34 @@ export function PortfolioSummary({ holdings }: PortfolioSummaryProps) {
         : "text-foreground";
 
   return (
-    <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <SummaryCard label="Market Value" value={formatTHB(totalMarketValue)} />
-      <SummaryCard label="Total Cost" value={formatTHB(totalCost)} />
-      <SummaryCard
-        label="Gain / Loss"
-        value={formatTHB(gainLoss)}
-        valueClassName={gainLossColor}
-      />
-      <SummaryCard
-        label="Return"
-        value={formatPercent(returnPct)}
-        valueClassName={gainLossColor}
-      />
-    </dl>
+    <div className="space-y-3">
+      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <SummaryCard label="Market Value" value={formatTHB(totalMarketValue)} />
+        <SummaryCard label="Total Cost" value={formatTHB(totalCost)} />
+        <SummaryCard
+          label="Gain / Loss"
+          value={formatTHB(gainLoss)}
+          valueClassName={gainLossColor}
+        />
+        <SummaryCard
+          label="Return"
+          value={formatPercent(returnPct)}
+          valueClassName={gainLossColor}
+        />
+      </dl>
+
+      {holdings.length > 0 && (
+        <dl className="grid grid-cols-2 gap-3">
+          {typeValues.map(({ type, value, percent }) => (
+            <SummaryCard
+              key={type}
+              label={`${type === "core" ? "Core" : "Satellite"}`}
+              value={`${formatTHB(value)} (${formatPercent(percent)})`}
+            />
+          ))}
+        </dl>
+      )}
+    </div>
   );
 }
 

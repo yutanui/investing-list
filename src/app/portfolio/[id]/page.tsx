@@ -4,7 +4,7 @@ import { use, useState } from "react";
 import Link from "next/link";
 import { PortfolioProvider, usePortfolio } from "@/context/portfolio-context";
 import { usePortfolioList } from "@/context/portfolio-list-context";
-import { Holding, ASSET_TYPE_LABELS } from "@/types/portfolio";
+import { Holding, ASSET_TYPE_LABELS, HOLDING_TYPE_LABELS } from "@/types/portfolio";
 import { formatTHB, formatPercent, formatAllocation, toTHB } from "@/lib/format";
 import { HoldingDialog } from "@/components/holding-dialog";
 import { PortfolioSummary } from "@/components/portfolio-summary";
@@ -180,6 +180,7 @@ function PortfolioHoldingsView({
           <thead>
             <tr className="border-b border-foreground/10 text-xs uppercase tracking-wide text-foreground/50">
               <th scope="col" className="pb-3 pr-4 font-medium">Name</th>
+              <th scope="col" className="pb-3 pr-4 font-medium">Asset Type</th>
               <th scope="col" className="pb-3 pr-4 font-medium">Type</th>
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Shares</th>
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Avg Cost</th>
@@ -223,6 +224,9 @@ function PortfolioHoldingsView({
                   </td>
                   <td className="py-3 pr-4 text-foreground/60">
                     {ASSET_TYPE_LABELS[h.assetType]}
+                  </td>
+                  <td className="py-3 pr-4 text-foreground/60">
+                    {HOLDING_TYPE_LABELS[h.holdingType ?? "core"]}
                   </td>
                   <td className="py-3 pr-4 text-right">{h.shares}</td>
                   <td className="py-3 pr-4 text-right">{formatTHB(avgCostTHB)}</td>
@@ -293,6 +297,7 @@ function HoldingCard({
           <div className="mt-0.5 flex items-center gap-2 text-xs text-foreground/50">
             {holding.ticker && <span className="uppercase">{holding.ticker}</span>}
             <span>{ASSET_TYPE_LABELS[holding.assetType]}</span>
+            <span>{HOLDING_TYPE_LABELS[holding.holdingType ?? "core"]}</span>
           </div>
         </div>
         <div className="rounded-md p-1.5 text-foreground/40">
