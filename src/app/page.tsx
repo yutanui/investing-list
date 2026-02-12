@@ -133,6 +133,15 @@ export default function HomePage() {
   );
 }
 
+type SortKey = "name" | "amount" | "returns";
+type SortDirection = "asc" | "desc";
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "name", label: "Name" },
+  { value: "amount", label: "Amount" },
+  { value: "returns", label: "% Returns" },
+];
+
 function PortfolioListView({
   portfolios,
   allHoldings,
@@ -146,6 +155,31 @@ function PortfolioListView({
   onAdd: () => void;
   onEdit: (portfolio: Portfolio) => void;
 }) {
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  const statsMap = new Map(
+    portfolios.map((p) => [p.id, getPortfolioStats(p.id)])
+  );
+
+  const sortedPortfolios = [...portfolios].sort((a, b) => {
+    const statsA = statsMap.get(a.id)!;
+    const statsB = statsMap.get(b.id)!;
+    let cmp = 0;
+    switch (sortKey) {
+      case "name":
+        cmp = a.name.localeCompare(b.name);
+        break;
+      case "amount":
+        cmp = statsA.totalValue - statsB.totalValue;
+        break;
+      case "returns":
+        cmp = statsA.gainLossPercent - statsB.gainLossPercent;
+        break;
+    }
+    return sortDirection === "asc" ? cmp : -cmp;
+  });
+
   return (
     <section aria-label="Portfolio list">
       <div className="flex items-center justify-between">
@@ -175,18 +209,49 @@ function PortfolioListView({
         </div>
       )}
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {portfolios.map((p) => {
-          const { holdingsCount, totalValue, totalCost, gainLoss, gainLossPercent } = getPortfolioStats(p.id);
+      <div className="mt-6 flex items-center gap-2">
+        <label htmlFor="sort-key" className="text-sm text-foreground/60">Sort by</label>
+        <select
+          id="sort-key"
+          value={sortKey}
+          onChange={(e) => setSortKey(e.target.value as SortKey)}
+          className="rounded-md border border-foreground/10 bg-background px-2 py-1.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => setSortDirection((d) => (d === "asc" ? "desc" : "asc"))}
+          className="inline-flex items-center gap-1 rounded-md border border-foreground/10 px-2 py-1.5 text-sm text-foreground/70 hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+          aria-label={`Sort ${sortDirection === "asc" ? "ascending" : "descending"}`}
+        >
+          {sortDirection === "asc" ? (
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m6-6v12m0 0-3.75-3.75M14.25 19.5l3.75-3.75" />
+            </svg>
+          ) : (
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 19.5l3.75-3.75" />
+            </svg>
+          )}
+          {sortDirection === "asc" ? "Asc" : "Desc"}
+        </button>
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {sortedPortfolios.map((p) => {
+          const stats = statsMap.get(p.id)!;
           return (
             <PortfolioCard
               key={p.id}
               portfolio={p}
-              holdingsCount={holdingsCount}
-              totalValue={totalValue}
-              totalCost={totalCost}
-              gainLoss={gainLoss}
-              gainLossPercent={gainLossPercent}
+              holdingsCount={stats.holdingsCount}
+              totalValue={stats.totalValue}
+              totalCost={stats.totalCost}
+              gainLoss={stats.gainLoss}
+              gainLossPercent={stats.gainLossPercent}
               onEdit={() => onEdit(p)}
             />
           );
