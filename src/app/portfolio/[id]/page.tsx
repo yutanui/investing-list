@@ -4,6 +4,7 @@ import { use, useState } from "react";
 import Link from "next/link";
 import { PortfolioProvider, usePortfolio } from "@/context/portfolio-context";
 import { usePortfolioList } from "@/context/portfolio-list-context";
+import { useAllHoldings } from "@/context/holdings-context";
 import { Holding, ASSET_TYPE_LABELS, HOLDING_TYPE_LABELS } from "@/types/portfolio";
 import { formatTHB, formatPercent, formatAllocation, toTHB } from "@/lib/format";
 import { HoldingDialog } from "@/components/holding-dialog";
@@ -53,6 +54,7 @@ export default function PortfolioPage({ params }: PageProps) {
 
 function HoldingsView({ portfolioName }: { portfolioName: string }) {
   const { holdings, loading, addHolding, updateHolding, removeHolding } = usePortfolio();
+  const { reload: reloadAllHoldings } = useAllHoldings();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingHolding, setEditingHolding] = useState<Holding | null>(null);
   const [dialogKey, setDialogKey] = useState(0);
@@ -75,12 +77,14 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
     } else {
       addHolding(holding);
     }
+    reloadAllHoldings();
     setDialogOpen(false);
     setEditingHolding(null);
   }
 
   function handleDelete(id: string) {
     removeHolding(id);
+    reloadAllHoldings();
     setDialogOpen(false);
     setEditingHolding(null);
   }
