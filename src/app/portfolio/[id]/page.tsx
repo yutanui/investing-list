@@ -100,19 +100,6 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
 
   return (
     <>
-      {/* Back link */}
-      <div className="mb-4">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 text-sm text-foreground/60 hover:text-foreground"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-          </svg>
-          All Portfolios
-        </Link>
-      </div>
-
       {holdings.length === 0 ? (
         <EmptyState portfolioName={portfolioName} onAdd={openAdd} />
       ) : (
