@@ -7,6 +7,7 @@ import { usePortfolioList } from "@/context/portfolio-list-context";
 import { useAllHoldings } from "@/context/holdings-context";
 import { Portfolio } from "@/types/portfolio";
 import { formatTHB, formatPercent } from "@/lib/format";
+import { TypeBreakdown } from "@/context/holdings-context";
 import { PortfolioDialog } from "@/components/portfolio-dialog";
 
 type SortKey = "name" | "amount" | "returns";
@@ -234,7 +235,7 @@ function NavPortfolioCard({
   onNavigate,
 }: {
   portfolio: Portfolio;
-  stats: { holdingsCount: number; totalValue: number; totalCost: number; gainLoss: number; gainLossPercent: number };
+  stats: { holdingsCount: number; totalValue: number; totalCost: number; gainLoss: number; gainLossPercent: number; typeBreakdown: Record<string, TypeBreakdown> };
   isActive: boolean;
   onEdit: () => void;
   onNavigate: () => void;
@@ -288,11 +289,16 @@ function NavPortfolioCard({
       <div className="relative z-10 mt-2 text-right pointer-events-none">
         <span className="text-sm font-semibold tabular-nums">{formatTHB(stats.totalValue)}</span>
         {stats.holdingsCount > 0 && (
-          <div className="mt-0.5 text-xs text-foreground/50">
-            <span className={`font-medium ${gainLossColor}`}>
-              {formatTHB(stats.gainLoss)} ({formatPercent(stats.gainLossPercent)})
-            </span>
-          </div>
+          <>
+            <div className="mt-0.5 text-xs text-foreground/50">
+              <span className={`font-medium ${gainLossColor}`}>
+                {formatTHB(stats.gainLoss)} ({formatPercent(stats.gainLossPercent)})
+              </span>
+            </div>
+            <div className="mt-0.5 text-xs text-foreground/50">
+              Core {formatPercent(stats.typeBreakdown.core.percent)} · Satellite {formatPercent(stats.typeBreakdown.satellite.percent)}
+            </div>
+          </>
         )}
       </div>
     </article>
