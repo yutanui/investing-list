@@ -1,5 +1,5 @@
 import { Holding, HoldingType } from "@/types/portfolio";
-import { formatTHB, formatPercent, toTHB } from "@/lib/format";
+import { formatTHB, formatPercent, formatAllocation, toTHB } from "@/lib/format";
 
 interface PortfolioSummaryProps {
   holdings: Holding[];
@@ -57,7 +57,7 @@ export function PortfolioSummary({ holdings }: PortfolioSummaryProps) {
             <SummaryCard
               key={type}
               label={`${type === "core" ? "Core" : "Satellite"}`}
-              value={`${formatTHB(value)} (${formatPercent(percent)})`}
+              value={`${formatTHB(value)} (${formatAllocation(percent)})`}
             />
           ))}
         </dl>
