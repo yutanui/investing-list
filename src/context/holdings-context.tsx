@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, use, useCallback, useEffect, useState } from "react";
-import { Holding, Currency } from "@/types/portfolio";
+import { Holding, HoldingType, Currency } from "@/types/portfolio";
 import { loadHoldings } from "@/lib/storage";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
@@ -12,12 +12,18 @@ import { toTHB } from "@/lib/format";
  * the sidebar (portfolio cards) and pages can access stats.
  */
 
+export interface TypeBreakdown {
+  value: number;
+  percent: number;
+}
+
 export interface PortfolioStats {
   holdingsCount: number;
   totalValue: number;
   totalCost: number;
   gainLoss: number;
   gainLossPercent: number;
+  typeBreakdown: Record<HoldingType, TypeBreakdown>;
 }
 
 interface HoldingsContextValue {
@@ -43,7 +49,7 @@ export function HoldingsProvider({ children }: { children: React.ReactNode }) {
     const loadData = user
       ? supabase
           .from("holdings")
-          .select("id, portfolio_id, shares, current_price, current_price_currency, avg_cost, avg_cost_currency")
+          .select("id, portfolio_id, holding_type, shares, current_price, current_price_currency, avg_cost, avg_cost_currency")
           .then(({ data, error }) => {
             if (error) {
               console.error("Failed to load holdings:", error.message);
@@ -52,6 +58,7 @@ export function HoldingsProvider({ children }: { children: React.ReactNode }) {
             return (data ?? []).map((row) => ({
               id: row.id,
               portfolioId: row.portfolio_id,
+              holdingType: (row.holding_type ?? "core") as HoldingType,
               shares: Number(row.shares),
               currentPrice: Number(row.current_price),
               currentPriceCurrency: (row.current_price_currency ?? "THB") as Currency,
@@ -86,7 +93,18 @@ export function HoldingsProvider({ children }: { children: React.ReactNode }) {
       );
       const gainLoss = totalValue - totalCost;
       const gainLossPercent = totalCost > 0 ? gainLoss / totalCost : 0;
-      return { holdingsCount, totalValue, totalCost, gainLoss, gainLossPercent };
+
+      const coreValue = portfolioHoldings
+        .filter((h) => (h.holdingType ?? "core") === "core")
+        .reduce((sum, h) => sum + h.shares * toTHB(h.currentPrice, h.currentPriceCurrency), 0);
+      const satelliteValue = totalValue - coreValue;
+
+      const typeBreakdown: Record<HoldingType, TypeBreakdown> = {
+        core: { value: coreValue, percent: totalValue > 0 ? coreValue / totalValue : 0 },
+        satellite: { value: satelliteValue, percent: totalValue > 0 ? satelliteValue / totalValue : 0 },
+      };
+
+      return { holdingsCount, totalValue, totalCost, gainLoss, gainLossPercent, typeBreakdown };
     },
     [allHoldings],
   );

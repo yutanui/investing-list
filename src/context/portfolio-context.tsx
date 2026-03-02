@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, use, useCallback, useEffect, useState } from "react";
-import { Holding, AssetType, Currency } from "@/types/portfolio";
+import { Holding, AssetType, HoldingType, Currency } from "@/types/portfolio";
 import { loadHoldings, saveHoldings } from "@/lib/storage";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
@@ -36,6 +36,7 @@ interface HoldingRow {
   name: string;
   ticker: string | null;
   asset_type: AssetType;
+  holding_type: HoldingType;
   shares: number;
   avg_cost: number;
   avg_cost_currency: Currency;
@@ -50,6 +51,7 @@ function rowToHolding(row: HoldingRow): Holding {
     name: row.name,
     ticker: row.ticker ?? undefined,
     assetType: row.asset_type,
+    holdingType: row.holding_type ?? "core",
     shares: Number(row.shares),
     averageCost: Number(row.avg_cost),
     averageCostCurrency: row.avg_cost_currency ?? "THB",
@@ -114,6 +116,7 @@ export function PortfolioProvider({ portfolioId, children }: PortfolioProviderPr
             name: holding.name,
             ticker: holding.ticker ?? null,
             asset_type: holding.assetType,
+            holding_type: holding.holdingType,
             shares: holding.shares,
             avg_cost: holding.averageCost,
             avg_cost_currency: holding.averageCostCurrency,
@@ -146,6 +149,7 @@ export function PortfolioProvider({ portfolioId, children }: PortfolioProviderPr
         if (updates.name !== undefined) dbUpdates.name = updates.name;
         if (updates.ticker !== undefined) dbUpdates.ticker = updates.ticker ?? null;
         if (updates.assetType !== undefined) dbUpdates.asset_type = updates.assetType;
+        if (updates.holdingType !== undefined) dbUpdates.holding_type = updates.holdingType;
         if (updates.shares !== undefined) dbUpdates.shares = updates.shares;
         if (updates.averageCost !== undefined) dbUpdates.avg_cost = updates.averageCost;
         if (updates.averageCostCurrency !== undefined) dbUpdates.avg_cost_currency = updates.averageCostCurrency;
