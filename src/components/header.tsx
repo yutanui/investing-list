@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import { AuthDialog } from "@/components/auth-dialog";
@@ -11,8 +11,13 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuToggle }: HeaderProps) {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, isRecoveryMode, clearRecoveryMode } = useAuth();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
+
+  // Auto-open the dialog in password-reset mode when Supabase fires PASSWORD_RECOVERY
+  useEffect(() => {
+    if (isRecoveryMode) setAuthDialogOpen(true);
+  }, [isRecoveryMode]);
 
   return (
     <>
@@ -68,7 +73,8 @@ export function Header({ onMenuToggle }: HeaderProps) {
 
       <AuthDialog
         open={authDialogOpen}
-        onClose={() => setAuthDialogOpen(false)}
+        onClose={() => { setAuthDialogOpen(false); clearRecoveryMode(); }}
+        initialMode={isRecoveryMode ? "reset_new_password" : undefined}
       />
     </>
   );
