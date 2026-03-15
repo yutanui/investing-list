@@ -70,6 +70,7 @@ export function loadHoldings(): Holding[] {
       holdingType: (h.holdingType as HoldingType) ?? "core",
       averageCostCurrency: (h.averageCostCurrency as Currency) ?? "THB",
       currentPriceCurrency: (h.currentPriceCurrency as Currency) ?? "THB",
+      updatedAt: h.updatedAt ? new Date(h.updatedAt as string) : undefined,
     })) as Holding[];
 
     return holdings;
