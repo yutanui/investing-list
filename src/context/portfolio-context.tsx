@@ -43,6 +43,8 @@ interface HoldingRow {
   current_price: number;
   current_price_currency: Currency;
   updated_at: string | null;
+  company_id: string | null;
+  holding_id: string | null;
 }
 
 function rowToHolding(row: HoldingRow): Holding {
@@ -59,6 +61,8 @@ function rowToHolding(row: HoldingRow): Holding {
     currentPrice: Number(row.current_price),
     currentPriceCurrency: row.current_price_currency ?? "THB",
     updatedAt: row.updated_at ? new Date(row.updated_at) : undefined,
+    companyId: row.company_id ?? undefined,
+    holdingId: row.holding_id ?? undefined,
   };
 }
 
@@ -124,6 +128,8 @@ export function PortfolioProvider({ portfolioId, children }: PortfolioProviderPr
             avg_cost_currency: holding.averageCostCurrency,
             current_price: holding.currentPrice,
             current_price_currency: holding.currentPriceCurrency,
+            company_id: holding.companyId ?? null,
+            holding_id: holding.holdingId ?? null,
           })
           .select()
           .single();
@@ -157,6 +163,8 @@ export function PortfolioProvider({ portfolioId, children }: PortfolioProviderPr
         if (updates.averageCostCurrency !== undefined) dbUpdates.avg_cost_currency = updates.averageCostCurrency;
         if (updates.currentPrice !== undefined) dbUpdates.current_price = updates.currentPrice;
         if (updates.currentPriceCurrency !== undefined) dbUpdates.current_price_currency = updates.currentPriceCurrency;
+        if (updates.companyId !== undefined) dbUpdates.company_id = updates.companyId ?? null;
+        if (updates.holdingId !== undefined) dbUpdates.holding_id = updates.holdingId ?? null;
         dbUpdates.updated_at = new Date().toISOString();
 
         const { error } = await supabase

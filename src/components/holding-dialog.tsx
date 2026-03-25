@@ -82,6 +82,8 @@ export function HoldingDialog({
       averageCostCurrency: formData.get("averageCostCurrency") as Currency,
       currentPrice: Number(formData.get("currentPrice")),
       currentPriceCurrency: formData.get("currentPriceCurrency") as Currency,
+      companyId: (formData.get("companyId") as string).trim() || undefined,
+      holdingId: (formData.get("holdingId") as string).trim() || undefined,
     };
 
     onSave(saved);
@@ -285,6 +287,38 @@ export function HoldingDialog({
                   ))}
                 </select>
               </div>
+            </div>
+
+            {/* Company ID */}
+            <div>
+              <label htmlFor="holding-company-id" className="block text-sm font-medium">
+                Company ID <span className="font-normal text-foreground/50">(optional)</span>
+              </label>
+              <input
+                id="holding-company-id"
+                name="companyId"
+                type="text"
+                defaultValue={holding?.companyId ?? ""}
+                placeholder="e.g. BBL…"
+                autoComplete="off"
+                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+              />
+            </div>
+
+            {/* Holding ID */}
+            <div>
+              <label htmlFor="holding-holding-id" className="block text-sm font-medium">
+                Holding ID <span className="font-normal text-foreground/50">(optional)</span>
+              </label>
+              <input
+                id="holding-holding-id"
+                name="holdingId"
+                type="text"
+                defaultValue={holding?.holdingId ?? ""}
+                placeholder="e.g. 12345…"
+                autoComplete="off"
+                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+              />
             </div>
           </div>
 

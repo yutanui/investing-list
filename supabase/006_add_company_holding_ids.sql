@@ -1,0 +1,3 @@
+ALTER TABLE holdings
+  ADD COLUMN IF NOT EXISTS company_id TEXT,
+  ADD COLUMN IF NOT EXISTS holding_id TEXT;
