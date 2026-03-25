@@ -6,7 +6,7 @@ import { PortfolioProvider, usePortfolio } from "@/context/portfolio-context";
 import { usePortfolioList } from "@/context/portfolio-list-context";
 import { useAllHoldings } from "@/context/holdings-context";
 import { Holding, ASSET_TYPE_LABELS, HOLDING_TYPE_LABELS } from "@/types/portfolio";
-import { formatTHB, formatPercent, formatAllocation, toTHB } from "@/lib/format";
+import { formatTHB, formatPercent, formatAllocation, formatDate, toTHB } from "@/lib/format";
 import { HoldingDialog } from "@/components/holding-dialog";
 import { PortfolioSummary } from "@/components/portfolio-summary";
 
@@ -144,6 +144,11 @@ function PortfolioHoldingsView({
     0
   );
 
+  const lastUpdatedAt = holdings.reduce<Date | undefined>((max, h) => {
+    if (!h.updatedAt) return max;
+    return max === undefined || h.updatedAt > max ? h.updatedAt : max;
+  }, undefined);
+
   return (
     <section aria-label="Portfolio holdings">
       <div className="flex items-center justify-between">
@@ -154,6 +159,11 @@ function PortfolioHoldingsView({
           <p className="mt-1 text-sm text-foreground/60">
             {holdings.length} {holdings.length === 1 ? "holding" : "holdings"}
           </p>
+          {lastUpdatedAt && (
+            <p className="mt-0.5 text-xs text-foreground/40">
+              Updated {formatDate(lastUpdatedAt)}
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -224,6 +234,9 @@ function PortfolioHoldingsView({
                     <div className="font-medium">{h.name}</div>
                     {h.ticker && (
                       <div className="text-xs text-foreground/50">{h.ticker}</div>
+                    )}
+                    {h.updatedAt && (
+                      <div className="text-xs text-foreground/35">{formatDate(h.updatedAt)}</div>
                     )}
                   </td>
                   <td className="py-3 pr-4 text-foreground/60">
@@ -331,6 +344,13 @@ function HoldingCard({
         <div className={`text-right ${gainLossColor}`}>
           {formatTHB(gainLoss)} ({formatPercent(gainLossPercent)})
         </div>
+
+        {holding.updatedAt && (
+          <>
+            <div className="text-foreground/40">Updated</div>
+            <div className="text-right text-foreground/40">{formatDate(holding.updatedAt)}</div>
+          </>
+        )}
       </div>
     </article>
   );

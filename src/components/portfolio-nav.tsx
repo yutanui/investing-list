@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { usePortfolioList } from "@/context/portfolio-list-context";
 import { useAllHoldings } from "@/context/holdings-context";
 import { Portfolio } from "@/types/portfolio";
-import { formatTHB, formatPercent } from "@/lib/format";
+import { formatTHB, formatPercent, formatDate } from "@/lib/format";
 import { TypeBreakdown } from "@/context/holdings-context";
 import { PortfolioDialog } from "@/components/portfolio-dialog";
 
@@ -235,7 +235,7 @@ function NavPortfolioCard({
   onNavigate,
 }: {
   portfolio: Portfolio;
-  stats: { holdingsCount: number; totalValue: number; totalCost: number; gainLoss: number; gainLossPercent: number; typeBreakdown: Record<string, TypeBreakdown> };
+  stats: { holdingsCount: number; totalValue: number; totalCost: number; gainLoss: number; gainLossPercent: number; typeBreakdown: Record<string, TypeBreakdown>; lastUpdatedAt?: Date };
   isActive: boolean;
   onEdit: () => void;
   onNavigate: () => void;
@@ -299,6 +299,11 @@ function NavPortfolioCard({
               Core {formatPercent(stats.typeBreakdown.core.percent)} · Satellite {formatPercent(stats.typeBreakdown.satellite.percent)}
             </div>
           </>
+        )}
+        {stats.lastUpdatedAt && (
+          <div className="mt-0.5 text-xs text-foreground/40">
+            Updated {formatDate(stats.lastUpdatedAt)}
+          </div>
         )}
       </div>
     </article>

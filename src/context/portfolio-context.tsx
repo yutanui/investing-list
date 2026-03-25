@@ -42,6 +42,7 @@ interface HoldingRow {
   avg_cost_currency: Currency;
   current_price: number;
   current_price_currency: Currency;
+  updated_at: string | null;
 }
 
 function rowToHolding(row: HoldingRow): Holding {
@@ -57,6 +58,7 @@ function rowToHolding(row: HoldingRow): Holding {
     averageCostCurrency: row.avg_cost_currency ?? "THB",
     currentPrice: Number(row.current_price),
     currentPriceCurrency: row.current_price_currency ?? "THB",
+    updatedAt: row.updated_at ? new Date(row.updated_at) : undefined,
   };
 }
 
@@ -132,7 +134,7 @@ export function PortfolioProvider({ portfolioId, children }: PortfolioProviderPr
         }
         setHoldings((prev) => [...prev, rowToHolding(data as HoldingRow)]);
       } else {
-        const newHolding: Holding = { ...holding, portfolioId };
+        const newHolding: Holding = { ...holding, portfolioId, updatedAt: new Date() };
         const allHoldings = loadHoldings();
         const next = [...allHoldings, newHolding];
         saveHoldings(next);
@@ -170,13 +172,14 @@ export function PortfolioProvider({ portfolioId, children }: PortfolioProviderPr
           prev.map((h) => (h.id === id ? { ...h, ...updates } : h)),
         );
       } else {
+        const updatedAt = new Date();
         const allHoldings = loadHoldings();
         const next = allHoldings.map((h) =>
-          h.id === id ? { ...h, ...updates } : h,
+          h.id === id ? { ...h, ...updates, updatedAt } : h,
         );
         saveHoldings(next);
         setHoldings((prev) =>
-          prev.map((h) => (h.id === id ? { ...h, ...updates } : h)),
+          prev.map((h) => (h.id === id ? { ...h, ...updates, updatedAt } : h)),
         );
       }
     },

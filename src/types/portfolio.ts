@@ -38,4 +38,5 @@ export interface Holding {
   averageCostCurrency: Currency;
   currentPrice: number; // per unit in original currency
   currentPriceCurrency: Currency;
+  updatedAt?: Date;
 }

@@ -43,6 +43,16 @@ export function formatAllocation(ratio: number): string {
   return percentFormatterNoSign.format(ratio);
 }
 
+const dateFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+export function formatDate(date: Date): string {
+  return dateFormatter.format(date);
+}
+
 /**
  * Convert amount to THB based on currency.
  * If already THB, returns as-is. If USD, converts using fixed rate.

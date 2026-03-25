@@ -24,6 +24,7 @@ export interface PortfolioStats {
   gainLoss: number;
   gainLossPercent: number;
   typeBreakdown: Record<HoldingType, TypeBreakdown>;
+  lastUpdatedAt?: Date;
 }
 
 interface HoldingsContextValue {
@@ -49,7 +50,7 @@ export function HoldingsProvider({ children }: { children: React.ReactNode }) {
     const loadData = user
       ? supabase
           .from("holdings")
-          .select("id, portfolio_id, holding_type, shares, current_price, current_price_currency, avg_cost, avg_cost_currency")
+          .select("id, portfolio_id, holding_type, shares, current_price, current_price_currency, avg_cost, avg_cost_currency, updated_at")
           .then(({ data, error }) => {
             if (error) {
               console.error("Failed to load holdings:", error.message);
@@ -64,6 +65,7 @@ export function HoldingsProvider({ children }: { children: React.ReactNode }) {
               currentPriceCurrency: (row.current_price_currency ?? "THB") as Currency,
               averageCost: Number(row.avg_cost),
               averageCostCurrency: (row.avg_cost_currency ?? "THB") as Currency,
+              updatedAt: row.updated_at ? new Date(row.updated_at) : undefined,
             })) as Holding[];
           })
       : Promise.resolve(loadHoldings());
@@ -104,7 +106,12 @@ export function HoldingsProvider({ children }: { children: React.ReactNode }) {
         satellite: { value: satelliteValue, percent: totalValue > 0 ? satelliteValue / totalValue : 0 },
       };
 
-      return { holdingsCount, totalValue, totalCost, gainLoss, gainLossPercent, typeBreakdown };
+      const lastUpdatedAt = portfolioHoldings.reduce<Date | undefined>((max, h) => {
+        if (!h.updatedAt) return max;
+        return max === undefined || h.updatedAt > max ? h.updatedAt : max;
+      }, undefined);
+
+      return { holdingsCount, totalValue, totalCost, gainLoss, gainLossPercent, typeBreakdown, lastUpdatedAt };
     },
     [allHoldings],
   );
