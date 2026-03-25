@@ -39,4 +39,6 @@ export interface Holding {
   currentPrice: number; // per unit in original currency
   currentPriceCurrency: Currency;
   updatedAt?: Date;
+  companyId?: string;
+  holdingId?: string;
 }
