@@ -1,0 +1,1 @@
+ALTER TABLE holdings ADD COLUMN IF NOT EXISTS nav_date TEXT;

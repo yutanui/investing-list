@@ -87,12 +87,18 @@ Custom Tailwind color aliases used throughout (defined in the global CSS / Tailw
 | Route | File | Description |
 |---|---|---|
 | `/` | `src/app/page.tsx` | Aggregated summary across all portfolios using `PortfolioSummary` + `allHoldings` from `HoldingsProvider` |
-| `/portfolio/[id]` | `src/app/portfolio/[id]/page.tsx` | Per-portfolio holdings view; desktop table + mobile card list; mounts `PortfolioProvider` |
+| `/portfolio/[id]` | `src/app/portfolio/[id]/page.tsx` | Per-portfolio holdings view; desktop table + mobile card list; mounts `PortfolioProvider`; includes "Update NAV" button |
+
+### API Routes
+
+| Route | File | Description |
+|---|---|---|
+| `POST /api/fetch-nav` | `src/app/api/fetch-nav/route.ts` | Server-side proxy to Thailand SEC API; accepts `{ holdingId, navDate }`, retries up to 3 days back on 204, returns `{ lastVal, navDate }` or `{ lastVal: null, navDate: null }` |
 
 ### Data model (`src/types/portfolio.ts`)
 
 - `Portfolio`: `{ id, name }`
-- `Holding`: belongs to one portfolio; has `assetType` (stock/etf/mutual_fund/bond), `holdingType` (core/satellite), `shares`, `averageCost`/`currentPrice` each with a `Currency` (THB/USD), plus optional `ticker`, `companyId`, `holdingId`, and `updatedAt` (set by DB trigger)
+- `Holding`: belongs to one portfolio; has `assetType` (stock/etf/mutual_fund/bond), `holdingType` (core/satellite), `shares`, `averageCost`/`currentPrice` each with a `Currency` (THB/USD), plus optional `ticker`, `companyId`, `holdingId`, `navDate` (last fetched NAV date string), and `updatedAt` (set by DB trigger)
 
 ### Currency handling
 
@@ -107,6 +113,7 @@ SQL migrations are in `supabase/` (run manually via Supabase SQL Editor in order
 4. `004_add_holding_type.sql` — holding_type column
 5. `005_add_updated_at_trigger.sql` — `updated_at` timestamp on holdings, auto-updated by trigger
 6. `006_add_company_holding_ids.sql` — optional `company_id` and `holding_id` columns on holdings
+7. `007_add_nav_date.sql` — optional `nav_date` TEXT column on holdings
 
 DB column naming is snake_case; TypeScript field naming is camelCase. Context files contain mapper functions (`rowToHolding`, `rowToPortfolio`) for conversion.
 
