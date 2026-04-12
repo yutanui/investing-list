@@ -58,6 +58,8 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingHolding, setEditingHolding] = useState<Holding | null>(null);
   const [dialogKey, setDialogKey] = useState(0);
+  const [navLoading, setNavLoading] = useState(false);
+  const [navError, setNavError] = useState<string | null>(null);
 
   function openAdd() {
     setEditingHolding(null);
@@ -94,6 +96,54 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
     setEditingHolding(null);
   }
 
+  async function updateNavPrices() {
+    setNavLoading(true);
+    setNavError(null);
+
+    const today = new Date().toISOString().slice(0, 10);
+    const holdingsWithId = holdings.filter((h) => h.holdingId && h.holdingId.trim() !== "");
+
+    if (holdingsWithId.length === 0) {
+      setNavError("No holdings with a Holding ID set.");
+      setNavLoading(false);
+      return;
+    }
+
+    let updatedCount = 0;
+
+    for (const holding of holdingsWithId) {
+      try {
+        const res = await fetch("/api/fetch-nav", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ holdingId: holding.holdingId, navDate: today }),
+        });
+
+        if (!res.ok) continue;
+
+        const result = (await res.json()) as { lastVal: number | null; navDate: string | null };
+
+        if (result.lastVal !== null) {
+          updateHolding(holding.id, {
+            currentPrice: result.lastVal,
+            currentPriceCurrency: "THB",
+            navDate: result.navDate ?? undefined,
+          });
+          updatedCount++;
+        }
+      } catch {
+        // Skip this holding on network error
+      }
+    }
+
+    reloadAllHoldings();
+    setNavLoading(false);
+
+    if (updatedCount === 0) {
+      setNavError("No NAV prices could be fetched. Check Holding IDs or try again later.");
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -112,6 +162,9 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
           holdings={holdings}
           onAdd={openAdd}
           onEdit={openEdit}
+          onUpdateNav={updateNavPrices}
+          navLoading={navLoading}
+          navError={navError}
         />
       )}
 
@@ -132,11 +185,17 @@ function PortfolioHoldingsView({
   holdings,
   onAdd,
   onEdit,
+  onUpdateNav,
+  navLoading,
+  navError,
 }: {
   portfolioName: string;
   holdings: Holding[];
   onAdd: () => void;
   onEdit: (holding: Holding) => void;
+  onUpdateNav: () => Promise<void>;
+  navLoading: boolean;
+  navError: string | null;
 }) {
   // Calculate total market value for allocation % (all converted to THB)
   const totalMarketValue = holdings.reduce(
@@ -165,17 +224,45 @@ function PortfolioHoldingsView({
             </p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onAdd}
-          className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-3 py-2 text-sm font-medium text-background hover:bg-foreground/90 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Add Holding
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onUpdateNav}
+            disabled={navLoading}
+            className="inline-flex items-center gap-1.5 rounded-md border border-foreground/20 px-3 py-2 text-sm font-medium text-foreground/80 hover:border-foreground/40 hover:bg-foreground/[0.04] focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {navLoading ? (
+              <>
+                <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Updating…
+              </>
+            ) : (
+              <>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                </svg>
+                Update NAV
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={onAdd}
+            className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-3 py-2 text-sm font-medium text-background hover:bg-foreground/90 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Add Holding
+          </button>
+        </div>
       </div>
+
+      {navError && (
+        <p className="mt-3 text-sm text-loss">{navError}</p>
+      )}
 
       <div className="mt-6">
         <PortfolioSummary holdings={holdings} />
@@ -199,6 +286,7 @@ function PortfolioHoldingsView({
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Shares</th>
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Avg Cost</th>
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Price</th>
+              <th scope="col" className="pb-3 pr-4 text-right font-medium">NAV Date</th>
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Value</th>
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Gain/Loss</th>
               <th scope="col" className="pb-3 pr-4 text-right font-medium">%</th>
@@ -248,6 +336,9 @@ function PortfolioHoldingsView({
                   <td className="py-3 pr-4 text-right">{h.shares}</td>
                   <td className="py-3 pr-4 text-right">{formatTHB(avgCostTHB)}</td>
                   <td className="py-3 pr-4 text-right">{formatTHB(currentPriceTHB)}</td>
+                  <td className="py-3 pr-4 text-right text-foreground/60">
+                    {h.navDate ?? "—"}
+                  </td>
                   <td className="py-3 pr-4 text-right">
                     <div className="font-medium">{formatTHB(marketValue)}</div>
                     <div className="text-xs text-foreground/65">{formatAllocation(allocation)}</div>
@@ -344,6 +435,13 @@ function HoldingCard({
         <div className={`text-right ${gainLossColor}`}>
           {formatTHB(gainLoss)} ({formatPercent(gainLossPercent)})
         </div>
+
+        {holding.navDate && (
+          <>
+            <div className="text-foreground/40">NAV Date</div>
+            <div className="text-right text-foreground/40">{holding.navDate}</div>
+          </>
+        )}
 
         {holding.updatedAt && (
           <>

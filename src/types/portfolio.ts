@@ -41,4 +41,5 @@ export interface Holding {
   updatedAt?: Date;
   companyId?: string;
   holdingId?: string;
+  navDate?: string;
 }

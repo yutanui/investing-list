@@ -73,6 +73,7 @@ export function loadHoldings(): Holding[] {
       updatedAt: h.updatedAt ? new Date(h.updatedAt as string) : undefined,
       companyId: (h.companyId as string) ?? undefined,
       holdingId: (h.holdingId as string) ?? undefined,
+      navDate: (h.navDate as string) ?? undefined,
     })) as Holding[];
 
     return holdings;
