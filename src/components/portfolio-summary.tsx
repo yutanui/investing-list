@@ -76,8 +76,8 @@ function SummaryCard({
   valueClassName?: string;
 }) {
   return (
-    <div className="rounded-lg border border-foreground/10 px-4 py-3">
-      <dt className="text-xs font-medium text-foreground/50" style={{ textWrap: "balance" }}>
+    <div className="rounded-lg border border-foreground/15 px-4 py-3">
+      <dt className="text-xs font-medium text-foreground/60" style={{ textWrap: "balance" }}>
         {label}
       </dt>
       <dd className={`mt-1 text-lg font-semibold tabular-nums ${valueClassName}`}>
