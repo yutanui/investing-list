@@ -127,16 +127,17 @@ export function PortfolioNav({ open, onClose }: PortfolioNavProps) {
           <Link
             href="/"
             onClick={onClose}
-            className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
               pathname === "/"
-                ? "bg-foreground/10 text-foreground"
-                : "text-foreground/60 hover:bg-foreground/5 hover:text-foreground"
+                ? "bg-foreground/15 text-foreground font-semibold"
+                : "text-foreground/70 hover:bg-foreground/10 hover:text-foreground"
             }`}
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5" />
             </svg>
             Summary
+            <svg className="ml-auto h-3.5 w-3.5 opacity-50" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
           </Link>
         </div>
 
@@ -146,7 +147,7 @@ export function PortfolioNav({ open, onClose }: PortfolioNavProps) {
             <select
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value as SortKey)}
-              className="flex-1 rounded-md border border-foreground/10 bg-background px-2 py-1.5 text-xs focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+              className="flex-1 rounded-md border border-foreground/20 bg-background px-2 py-1.5 text-xs text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
               aria-label="Sort portfolios by"
             >
               {SORT_OPTIONS.map((opt) => (
@@ -156,7 +157,7 @@ export function PortfolioNav({ open, onClose }: PortfolioNavProps) {
             <button
               type="button"
               onClick={() => setSortDirection((d) => (d === "asc" ? "desc" : "asc"))}
-              className="inline-flex items-center gap-1 rounded-md border border-foreground/10 px-2 py-1.5 text-xs text-foreground/70 hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+              className="inline-flex items-center gap-1 rounded-md border border-foreground/20 px-2 py-1.5 text-xs text-foreground/80 hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
               aria-label={`Sort ${sortDirection === "asc" ? "ascending" : "descending"}`}
             >
               {sortDirection === "asc" ? (
@@ -180,7 +181,7 @@ export function PortfolioNav({ open, onClose }: PortfolioNavProps) {
               No portfolios yet
             </p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {sortedPortfolios.map((p) => {
                 const stats = statsMap.get(p.id)!;
                 const isActive = pathname === `/portfolio/${p.id}`;
@@ -251,8 +252,8 @@ function NavPortfolioCard({
     <article
       className={`relative rounded-lg border p-3 transition-colors ${
         isActive
-          ? "border-foreground/20 bg-foreground/5"
-          : "border-foreground/10 hover:border-foreground/20"
+          ? "border-foreground/40 bg-foreground/10 shadow-sm"
+          : "border-foreground/10 hover:bg-foreground/[0.06] hover:border-foreground/30 hover:shadow-sm"
       }`}
     >
       <Link
@@ -264,8 +265,8 @@ function NavPortfolioCard({
 
       <div className="relative z-10 flex items-start justify-between pointer-events-none">
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold">{portfolio.name}</h3>
-          <p className="mt-0.5 text-xs text-foreground/60">
+          <h3 className="truncate text-[0.9375rem] font-semibold">{portfolio.name}</h3>
+          <p className="mt-0.5 text-xs text-foreground/70">
             {stats.holdingsCount} {stats.holdingsCount === 1 ? "holding" : "holdings"}
           </p>
         </div>
@@ -277,7 +278,7 @@ function NavPortfolioCard({
             e.stopPropagation();
             onEdit();
           }}
-          className="pointer-events-auto ml-2 rounded-md p-1 text-foreground/50 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+          className="pointer-events-auto ml-2 rounded-md p-1 text-foreground/60 hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
           aria-label={`Edit ${portfolio.name}`}
         >
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
@@ -287,21 +288,21 @@ function NavPortfolioCard({
       </div>
 
       <div className="relative z-10 mt-2 text-right pointer-events-none">
-        <span className="text-sm font-semibold tabular-nums">{formatTHB(stats.totalValue)}</span>
+        <span className="text-base font-semibold tabular-nums">{formatTHB(stats.totalValue)}</span>
         {stats.holdingsCount > 0 && (
           <>
-            <div className="mt-0.5 text-xs text-foreground/50">
+            <div className="mt-0.5 text-xs text-foreground/65">
               <span className={`font-medium ${gainLossColor}`}>
                 {formatTHB(stats.gainLoss)} ({formatPercent(stats.gainLossPercent)})
               </span>
             </div>
-            <div className="mt-0.5 text-xs text-foreground/50">
+            <div className="mt-0.5 text-xs text-foreground/65">
               Core {formatPercent(stats.typeBreakdown.core.percent)} · Satellite {formatPercent(stats.typeBreakdown.satellite.percent)}
             </div>
           </>
         )}
         {stats.lastUpdatedAt && (
-          <div className="mt-0.5 text-xs text-foreground/40">
+          <div className="mt-0.5 text-xs text-foreground/50">
             Updated {formatDate(stats.lastUpdatedAt)}
           </div>
         )}

@@ -192,7 +192,7 @@ function PortfolioHoldingsView({
       <div className="mt-6 hidden overflow-x-auto sm:block">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-foreground/10 text-xs uppercase tracking-wide text-foreground/50">
+            <tr className="border-b border-foreground/10 text-xs uppercase tracking-wide text-foreground/60">
               <th scope="col" className="pb-3 pr-4 font-medium">Name</th>
               <th scope="col" className="pb-3 pr-4 font-medium">Asset Type</th>
               <th scope="col" className="pb-3 pr-4 font-medium">Type</th>
@@ -221,7 +221,7 @@ function PortfolioHoldingsView({
                 <tr
                   key={h.id}
                   onClick={() => onEdit(h)}
-                  className="cursor-pointer border-b border-foreground/5 transition-colors hover:bg-foreground/[0.02]"
+                  className="cursor-pointer border-b border-foreground/5 transition-colors hover:bg-foreground/[0.04]"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -239,10 +239,10 @@ function PortfolioHoldingsView({
                       <div className="text-xs text-foreground/35">{formatDate(h.updatedAt)}</div>
                     )}
                   </td>
-                  <td className="py-3 pr-4 text-foreground/60">
+                  <td className="py-3 pr-4 text-foreground/65">
                     {ASSET_TYPE_LABELS[h.assetType]}
                   </td>
-                  <td className="py-3 pr-4 text-foreground/60">
+                  <td className="py-3 pr-4 text-foreground/65">
                     {HOLDING_TYPE_LABELS[h.holdingType ?? "core"]}
                   </td>
                   <td className="py-3 pr-4 text-right">{h.shares}</td>
@@ -250,7 +250,7 @@ function PortfolioHoldingsView({
                   <td className="py-3 pr-4 text-right">{formatTHB(currentPriceTHB)}</td>
                   <td className="py-3 pr-4 text-right">
                     <div className="font-medium">{formatTHB(marketValue)}</div>
-                    <div className="text-xs text-foreground/50">{formatAllocation(allocation)}</div>
+                    <div className="text-xs text-foreground/65">{formatAllocation(allocation)}</div>
                   </td>
                   <td className={`py-3 pr-4 text-right ${gainLossColor}`}>
                     {formatTHB(gainLoss)}
@@ -297,7 +297,7 @@ function HoldingCard({
   return (
     <article
       onClick={() => onEdit(holding)}
-      className="cursor-pointer rounded-lg border border-foreground/10 px-4 py-3 transition-colors hover:border-foreground/20 hover:bg-foreground/[0.02]"
+      className="cursor-pointer rounded-lg border border-foreground/10 px-4 py-3 transition-colors hover:border-foreground/25 hover:bg-foreground/[0.04]"
       aria-label={`Edit ${holding.name} holding`}
       role="button"
       tabIndex={0}
@@ -311,7 +311,7 @@ function HoldingCard({
       <div className="flex items-start justify-between">
         <div>
           <div className="font-medium">{holding.name}</div>
-          <div className="mt-0.5 flex items-center gap-2 text-xs text-foreground/50">
+          <div className="mt-0.5 flex items-center gap-2 text-xs text-foreground/60">
             {holding.ticker && <span className="uppercase">{holding.ticker}</span>}
             <span>{ASSET_TYPE_LABELS[holding.assetType]}</span>
             <span>{HOLDING_TYPE_LABELS[holding.holdingType ?? "core"]}</span>
@@ -325,22 +325,22 @@ function HoldingCard({
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-y-1.5 text-sm tabular-nums">
-        <div className="text-foreground/50">Shares</div>
+        <div className="text-foreground/60">Shares</div>
         <div className="text-right">{holding.shares}</div>
 
-        <div className="text-foreground/50">Avg Cost</div>
+        <div className="text-foreground/60">Avg Cost</div>
         <div className="text-right">{formatTHB(avgCostTHB)}</div>
 
-        <div className="text-foreground/50">Current Price</div>
+        <div className="text-foreground/60">Current Price</div>
         <div className="text-right">{formatTHB(currentPriceTHB)}</div>
 
-        <div className="text-foreground/50 font-medium">Market Value</div>
+        <div className="text-foreground/60 font-medium">Market Value</div>
         <div className="text-right font-medium">{formatTHB(marketValue)}</div>
 
-        <div className="text-foreground/50">Allocation</div>
+        <div className="text-foreground/60">Allocation</div>
         <div className="text-right">{formatAllocation(allocation)}</div>
 
-        <div className="text-foreground/50">Gain/Loss</div>
+        <div className="text-foreground/60">Gain/Loss</div>
         <div className={`text-right ${gainLossColor}`}>
           {formatTHB(gainLoss)} ({formatPercent(gainLossPercent)})
         </div>
