@@ -96,6 +96,11 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
     setEditingHolding(null);
   }
 
+  function handleNavUpdated(id: string, updates: { currentPrice: number; navDate: string }) {
+    updateHolding(id, updates);
+    reloadAllHoldings();
+  }
+
   async function updateNavPrices() {
     setNavLoading(true);
     setNavError(null);
@@ -175,6 +180,7 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
         onSave={handleSave}
         onDelete={editingHolding ? handleDelete : undefined}
         onClose={handleClose}
+        onNavUpdated={handleNavUpdated}
       />
     </>
   );

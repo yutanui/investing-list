@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Holding, AssetType, HoldingType, Currency, ASSET_TYPE_LABELS, HOLDING_TYPE_LABELS, CURRENCY_LABELS } from "@/types/portfolio";
 
 // Holding data without portfolioId - the context adds it
@@ -12,6 +12,7 @@ interface HoldingDialogProps {
   onSave: (holding: HoldingFormData) => void;
   onDelete?: (id: string) => void;
   onClose: () => void;
+  onNavUpdated?: (id: string, updates: { currentPrice: number; navDate: string }) => void;
 }
 
 const ASSET_TYPES = Object.entries(ASSET_TYPE_LABELS) as [AssetType, string][];
@@ -28,11 +29,16 @@ export function HoldingDialog({
   onSave,
   onDelete,
   onClose,
+  onNavUpdated,
 }: HoldingDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
 
   const isEditing = !!holding;
+
+  const [navLoading, setNavLoading] = useState(false);
+  const [navError, setNavError] = useState<string | null>(null);
+  const [livePrice, setLivePrice] = useState<number | null>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -43,6 +49,8 @@ export function HoldingDialog({
       requestAnimationFrame(() => firstInputRef.current?.focus());
     } else {
       dialog.close();
+      setLivePrice(null);
+      setNavError(null);
     }
   }, [open]);
 
@@ -97,6 +105,39 @@ export function HoldingDialog({
     );
     if (confirmed) {
       onDelete(holding.id);
+    }
+  }
+
+  async function handleUpdateNav() {
+    if (!holding?.holdingId) return;
+
+    setNavLoading(true);
+    setNavError(null);
+
+    const navDate = new Date().toISOString().slice(0, 10);
+
+    try {
+      const res = await fetch("/api/fetch-nav", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ holdingId: holding.holdingId, navDate }),
+      });
+
+      const result = (await res.json()) as { lastVal: number | null; navDate: string | null };
+
+      if (result.lastVal !== null) {
+        setLivePrice(result.lastVal);
+        onNavUpdated?.(holding.id, {
+          currentPrice: result.lastVal,
+          navDate: result.navDate ?? navDate,
+        });
+      } else {
+        setNavError("Could not fetch NAV");
+      }
+    } catch {
+      setNavError("Could not fetch NAV");
+    } finally {
+      setNavLoading(false);
     }
   }
 
@@ -269,7 +310,10 @@ export function HoldingDialog({
                   required
                   min="0"
                   step="any"
-                  defaultValue={holding?.currentPrice ?? ""}
+                  {...(livePrice !== null
+                    ? { value: livePrice, onChange: (e) => setLivePrice(Number(e.target.value)) }
+                    : { defaultValue: holding?.currentPrice ?? "" }
+                  )}
                   placeholder="e.g. 135.00…"
                   autoComplete="off"
                   className="block flex-1 rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
@@ -324,8 +368,8 @@ export function HoldingDialog({
 
           {/* Footer */}
           <div className="flex flex-col-reverse gap-2 border-t border-foreground/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            {/* Delete — only in edit mode */}
-            <div>
+            {/* Delete + Update NAV — only in edit mode */}
+            <div className="flex items-center gap-2">
               {isEditing && onDelete && (
                 <button
                   type="button"
@@ -334,6 +378,30 @@ export function HoldingDialog({
                 >
                   Delete
                 </button>
+              )}
+              {isEditing && holding?.holdingId && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={handleUpdateNav}
+                    disabled={navLoading}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-foreground/20 px-3 py-2 text-sm font-medium hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {navLoading ? (
+                      <>
+                        <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Fetching…
+                      </>
+                    ) : (
+                      "Update NAV"
+                    )}
+                  </button>
+                  {navError && (
+                    <p className="mt-1 text-xs text-loss">{navError}</p>
+                  )}
+                </div>
               )}
             </div>
 
