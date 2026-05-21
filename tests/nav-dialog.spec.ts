@@ -101,31 +101,33 @@ test.describe("NAV Dialog - Update NAV Button", () => {
     await page.goto(`http://localhost:3000/portfolio/${portfolioId}`);
     await page.waitForLoadState("networkidle");
 
-    // Listen for the API request before clicking
-    const requestPromise = page.waitForRequest(
-      (request: any) =>
-        request.url().includes("/api/fetch-nav") &&
-        request.method() === "POST",
-      { timeout: 15000 }
-    );
+    // Intercept the request — no real network call, deterministic body capture
+    let capturedBody: { holdingId: string; navDate: string } | null = null;
+    await page.route("**/api/fetch-nav", async (route) => {
+      capturedBody = await route.request().postDataJSON();
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ lastVal: 42.5, navDate: "2026-04-12" }),
+      });
+    });
 
     await openEditDialog(page, "Fund A");
 
-    // Click Update NAV button inside the dialog
-    const navButton = page
+    await page
       .locator("dialog[open]")
-      .locator('button:has-text("Update NAV")');
-    await navButton.click();
+      .locator('button:has-text("Update NAV")')
+      .click();
 
-    // Wait for the request
-    const request = await requestPromise;
-    const body = await request.postDataJSON();
+    // Wait for the price to update — confirms route was hit and handled
+    await expect(
+      page.locator("dialog[open]").locator('input[name="currentPrice"]')
+    ).toHaveValue("42.5", { timeout: 5000 });
 
-    // Verify body structure
-    expect(body).toHaveProperty("holdingId");
-    expect(body).toHaveProperty("navDate");
-    expect(body.holdingId).toBe("M0113_2553");
-    expect(body.navDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // Verify the request body
+    expect(capturedBody).not.toBeNull();
+    expect(capturedBody!.holdingId).toBe("M0113_2553");
+    expect(capturedBody!.navDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   test("3. Current Price input updates on success", async ({ page }) => {
@@ -235,35 +237,27 @@ test.describe("NAV Dialog - Update NAV Button", () => {
     await page.goto(`http://localhost:3000/portfolio/${portfolioId}`);
     await page.waitForLoadState("networkidle");
 
-    // Mock the API with a delay
-    await page.evaluate(() => {
-      const originalFetch = window.fetch;
-      (window as any).fetch = async (url: string, options?: RequestInit) => {
-        if (url.includes("/api/fetch-nav")) {
-          await new Promise((resolve) => setTimeout(resolve, 800));
-          return new Response(
-            JSON.stringify({ lastVal: 42.5, navDate: "2026-04-12" }),
-            { status: 200, headers: { "Content-Type": "application/json" } }
-          );
-        }
-        return originalFetch(url, options);
-      };
+    // Deferred route — holds the response until we assert the loading state
+    let releaseRoute!: () => void;
+    const routeReady = new Promise<void>((resolve) => { releaseRoute = resolve; });
+
+    await page.route("**/api/fetch-nav", async (route) => {
+      await routeReady;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ lastVal: 42.5, navDate: "2026-04-12" }),
+      });
     });
 
     await openEditDialog(page, "Fund A");
 
-    // Click Update NAV button inside the dialog
-    const navButton = page
-      .locator("dialog[open]")
-      .locator('button:has-text("Update NAV"), button:has-text("Fetching")');
-
-    // Click the Update NAV button
     await page
       .locator("dialog[open]")
       .locator('button:has-text("Update NAV")')
       .click();
 
-    // Check for loading state
+    // Assert loading state before releasing the route (deterministic — no timing dependency)
     const loadingBtn = page
       .locator("dialog[open]")
       .locator("button")
@@ -271,11 +265,14 @@ test.describe("NAV Dialog - Update NAV Button", () => {
     await expect(loadingBtn).toBeVisible({ timeout: 2000 });
     await expect(loadingBtn).toBeDisabled();
 
-    // Wait for completion — button text returns to "Update NAV"
+    // Release the route — response now completes
+    releaseRoute();
+
+    // Button returns to normal state
     const doneBtn = page
       .locator("dialog[open]")
       .locator('button:has-text("Update NAV")');
-    await expect(doneBtn).toBeVisible({ timeout: 10000 });
+    await expect(doneBtn).toBeVisible({ timeout: 5000 });
   });
 
   test("6. Update NAV button absent when no holdingId", async ({ page }) => {

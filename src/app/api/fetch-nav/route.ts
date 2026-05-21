@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 interface FetchNavRequestBody {
   holdingId: string;
@@ -63,9 +64,20 @@ export async function POST(req: NextRequest): Promise<NextResponse<FetchNavRespo
   const apiKey = process.env.SEC_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { lastVal: null, navDate: null, error: "SEC_API_KEY is not configured" },
+      { lastVal: null, navDate: null, error: "Service unavailable" },
       { status: 500 },
     );
+  }
+
+  if (isSupabaseConfigured) {
+    const token = req.headers.get("Authorization")?.replace(/^Bearer /, "") ?? null;
+    if (!token) {
+      return NextResponse.json({ lastVal: null, navDate: null, error: "Unauthorized" }, { status: 401 });
+    }
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ lastVal: null, navDate: null, error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   let body: FetchNavRequestBody;

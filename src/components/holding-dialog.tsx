@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import { Holding, AssetType, HoldingType, Currency, ASSET_TYPE_LABELS, HOLDING_TYPE_LABELS, CURRENCY_LABELS } from "@/types/portfolio";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 // Holding data without portfolioId - the context adds it
 type HoldingFormData = Omit<Holding, "portfolioId">;
@@ -38,7 +39,7 @@ export function HoldingDialog({
 
   const [navLoading, setNavLoading] = useState(false);
   const [navError, setNavError] = useState<string | null>(null);
-  const [livePrice, setLivePrice] = useState<number | null>(null);
+  const [priceValue, setPriceValue] = useState<string>("");
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -46,13 +47,15 @@ export function HoldingDialog({
 
     if (open) {
       dialog.showModal();
+      setPriceValue(holding?.currentPrice?.toString() ?? "");
       requestAnimationFrame(() => firstInputRef.current?.focus());
     } else {
       dialog.close();
-      setLivePrice(null);
+      setPriceValue("");
       setNavError(null);
+      setNavLoading(false);
     }
-  }, [open]);
+  }, [open, holding?.currentPrice]);
 
   // Handle native dialog close (Escape key)
   useEffect(() => {
@@ -117,16 +120,24 @@ export function HoldingDialog({
     const navDate = new Date().toISOString().slice(0, 10);
 
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (isSupabaseConfigured) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+      }
+
       const res = await fetch("/api/fetch-nav", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ holdingId: holding.holdingId, navDate }),
       });
 
       const result = (await res.json()) as { lastVal: number | null; navDate: string | null; error?: string };
 
       if (result.lastVal !== null) {
-        setLivePrice(result.lastVal);
+        setPriceValue(result.lastVal.toString());
         onNavUpdated?.(holding.id, {
           currentPrice: result.lastVal,
           navDate: result.navDate ?? navDate,
@@ -310,10 +321,8 @@ export function HoldingDialog({
                   required
                   min="0"
                   step="any"
-                  {...(livePrice !== null
-                    ? { value: livePrice, onChange: (e) => setLivePrice(Number(e.target.value)) }
-                    : { defaultValue: holding?.currentPrice ?? "" }
-                  )}
+                  value={priceValue}
+                  onChange={(e) => setPriceValue(e.target.value)}
                   placeholder="e.g. 135.00…"
                   autoComplete="off"
                   className="block flex-1 rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
