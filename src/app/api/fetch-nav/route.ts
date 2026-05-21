@@ -14,11 +14,13 @@ interface SecNavRecord {
 interface FetchNavSuccessResponse {
   lastVal: number;
   navDate: string;
+  error?: never;
 }
 
 interface FetchNavEmptyResponse {
   lastVal: null;
   navDate: null;
+  error?: string;
 }
 
 type FetchNavResponse = FetchNavSuccessResponse | FetchNavEmptyResponse;
@@ -60,22 +62,32 @@ async function fetchNavForDate(
 export async function POST(req: NextRequest): Promise<NextResponse<FetchNavResponse>> {
   const apiKey = process.env.SEC_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ lastVal: null, navDate: null }, { status: 500 });
+    return NextResponse.json(
+      { lastVal: null, navDate: null, error: "SEC_API_KEY is not configured" },
+      { status: 500 },
+    );
   }
 
   let body: FetchNavRequestBody;
   try {
     body = (await req.json()) as FetchNavRequestBody;
   } catch {
-    return NextResponse.json({ lastVal: null, navDate: null }, { status: 400 });
+    return NextResponse.json(
+      { lastVal: null, navDate: null, error: "Invalid request body" },
+      { status: 400 },
+    );
   }
 
   const { holdingId, navDate } = body;
   if (!holdingId || !navDate) {
-    return NextResponse.json({ lastVal: null, navDate: null }, { status: 400 });
+    return NextResponse.json(
+      { lastVal: null, navDate: null, error: "holdingId and navDate are required" },
+      { status: 400 },
+    );
   }
 
   // Try today, today-1, today-2, today-3
+  let lastFetchError: string | undefined;
   for (let offset = 0; offset >= -3; offset--) {
     const attemptDate = offset === 0 ? navDate : addDays(navDate, offset);
     try {
@@ -87,10 +99,11 @@ export async function POST(req: NextRequest): Promise<NextResponse<FetchNavRespo
           navDate: record.nav_date ?? attemptDate,
         });
       }
-    } catch {
-      // Network or parse error — try next date
+    } catch (err) {
+      lastFetchError = err instanceof Error ? err.message : "Network error";
     }
   }
 
-  return NextResponse.json({ lastVal: null, navDate: null });
+  const error = lastFetchError ?? "No NAV data found for the last 4 days";
+  return NextResponse.json({ lastVal: null, navDate: null, error });
 }

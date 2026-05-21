@@ -123,7 +123,7 @@ export function HoldingDialog({
         body: JSON.stringify({ holdingId: holding.holdingId, navDate }),
       });
 
-      const result = (await res.json()) as { lastVal: number | null; navDate: string | null };
+      const result = (await res.json()) as { lastVal: number | null; navDate: string | null; error?: string };
 
       if (result.lastVal !== null) {
         setLivePrice(result.lastVal);
@@ -132,10 +132,10 @@ export function HoldingDialog({
           navDate: result.navDate ?? navDate,
         });
       } else {
-        setNavError("Could not fetch NAV");
+        setNavError(result.error ?? "Could not fetch NAV");
       }
     } catch {
-      setNavError("Could not fetch NAV");
+      setNavError("Network error — could not reach the NAV service");
     } finally {
       setNavLoading(false);
     }
