@@ -126,7 +126,7 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
 
         if (!res.ok) continue;
 
-        const result = (await res.json()) as { lastVal: number | null; navDate: string | null };
+        const result = (await res.json()) as { lastVal: number | null; navDate: string | null; error?: string };
 
         if (result.lastVal !== null) {
           updateHolding(holding.id, {
