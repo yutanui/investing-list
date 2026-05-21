@@ -8,9 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pnpm dev      # Start development server (http://localhost:3000)
 pnpm build    # Production build
 pnpm lint     # Run ESLint
+npx playwright test  # Run Playwright tests (requires dev server running)
 ```
 
-Package manager: **pnpm**. No tests are configured.
+Package manager: **pnpm**. Playwright is installed (`@playwright/test`) — a debug spec lives in `tests/debug-nav.spec.ts`, but no full test suite is configured.
 
 ## Git workflow
 
@@ -24,14 +25,16 @@ Open a pull request to merge back into `main` when the feature is ready.
 
 ## Environment Setup
 
-Copy `.env.local.example` to `.env.local` and fill in Supabase credentials:
+Copy `.env.local.example` to `.env.local` and fill in credentials:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+SEC_API_KEY=your-sec-api-subscription-key
 ```
 
-Without these vars, the app runs in local-only mode (no auth, data stored in localStorage).
+- Without Supabase vars, the app runs in local-only mode (no auth, data stored in localStorage).
+- `SEC_API_KEY` is a Thailand SEC API subscription key required for the `/api/fetch-nav` route. Without it, NAV fetching returns a 500 error.
 
 ## Architecture
 
@@ -57,6 +60,16 @@ AuthProvider               ← Supabase auth state + recovery mode
 
 `HoldingsProvider` (`src/context/holdings-context.tsx`) loads a lightweight subset of all holdings to compute `PortfolioStats` shown in sidebar cards. `PortfolioProvider` (`src/context/portfolio-context.tsx`) loads full holding details for a single portfolio page. After mutations, pages call `reload()` from `HoldingsProvider` to refresh sidebar stats.
 
+### Auth context (`src/context/auth-context.tsx`)
+
+Exposes `user`, `loading`, `isRecoveryMode`, and these actions:
+- `signIn(email, password)` / `signOut()` / `signUp(email, password)`
+- `resetPassword(email)` — sends a reset link via Supabase; redirects back to origin
+- `updatePassword(password)` — updates password when in recovery mode
+- `clearRecoveryMode()` — clears the `isRecoveryMode` flag after the reset flow completes
+
+`isRecoveryMode` is set to `true` when Supabase fires the `PASSWORD_RECOVERY` auth event (triggered by clicking the reset link in email). `Header` watches this and auto-opens `AuthDialog` in `reset_new_password` mode.
+
 ### Components
 
 All components are in `src/components/` — hand-written with inline Tailwind, no UI library.
@@ -64,14 +77,15 @@ All components are in `src/components/` — hand-written with inline Tailwind, n
 | Component | Purpose |
 |---|---|
 | `app-shell.tsx` | Root layout wrapper — mounts providers and renders `Header` + `PortfolioNav` around `{children}` |
-| `header.tsx` | Top nav bar with app title, hamburger (mobile), and auth controls (Sign In / Sign Out) |
+| `header.tsx` | Top nav bar with app title, hamburger (mobile), and auth controls (Sign In / Sign Out); auto-opens `AuthDialog` in recovery mode |
+| `auth-dialog.tsx` | Modal for all auth flows — four modes: `sign_in`, `sign_up`, `reset_request` (sends email link), `reset_new_password` (set new password after recovery) |
 | `portfolio-nav.tsx` | Collapsible left sidebar with sortable portfolio list; contains the `NavPortfolioCard` sub-component (sidebar card with stats, gain/loss, core/satellite %, last-updated date) |
 | `portfolio-card.tsx` | Larger card used on the home summary page; shows portfolio name, holdings count, total value, cost, and gain/loss |
 | `portfolio-dialog.tsx` | Modal (`<dialog>`) for creating / editing / deleting a portfolio |
 | `holding-dialog.tsx` | Modal (`<dialog>`) for creating / editing / deleting a holding; includes all fields: name, ticker, asset type, holding type, shares, average cost + currency, current price + currency, company ID, holding ID |
 | `portfolio-summary.tsx` | Stat cards grid: Market Value, Total Cost, Gain/Loss, Return %; plus a core/satellite breakdown row |
 
-Dialog pattern: both dialogs use the native `<dialog>` element (`showModal()` / `close()`), auto-focus the first input, close on Escape or backdrop click.
+Dialog pattern: all dialogs use the native `<dialog>` element (`showModal()` / `close()`), auto-focus the first input, close on Escape or backdrop click.
 
 Responsive layout: mobile shows card-based views; desktop (`sm:` breakpoint) shows table layout for holdings. The sidebar (`PortfolioNav`) is hidden off-screen on mobile and slides in as a drawer overlay, always visible on `lg:`.
 
@@ -93,16 +107,21 @@ Custom Tailwind color aliases used throughout (defined in the global CSS / Tailw
 
 | Route | File | Description |
 |---|---|---|
-| `POST /api/fetch-nav` | `src/app/api/fetch-nav/route.ts` | Server-side proxy to Thailand SEC API; accepts `{ holdingId, navDate }`, retries up to 3 days back on 204, returns `{ lastVal, navDate }` or `{ lastVal: null, navDate: null }` |
+| `POST /api/fetch-nav` | `src/app/api/fetch-nav/route.ts` | Server-side proxy to Thailand SEC API; requires `SEC_API_KEY` env var; validates Bearer token against Supabase when configured; accepts `{ holdingId, navDate }`, retries up to 3 days back on 204/empty, returns `{ lastVal, navDate }` or `{ lastVal: null, navDate: null, error }` |
 
 ### Data model (`src/types/portfolio.ts`)
 
 - `Portfolio`: `{ id, name }`
 - `Holding`: belongs to one portfolio; has `assetType` (stock/etf/mutual_fund/bond), `holdingType` (core/satellite), `shares`, `averageCost`/`currentPrice` each with a `Currency` (THB/USD), plus optional `ticker`, `companyId`, `holdingId`, `navDate` (last fetched NAV date string), and `updatedAt` (set by DB trigger)
 
-### Currency handling
+### Currency and formatting (`src/lib/format.ts`)
 
-All display values are converted to THB using a **fixed rate** of 1 USD = 32 THB. The `toTHB(amount, currency)` helper in `src/lib/format.ts` handles this. Never compare costs across currencies without converting via `toTHB`.
+All display values are converted to THB using a **fixed rate** of 1 USD = 32 THB (`USD_TO_THB_RATE`). Helpers:
+- `toTHB(amount, currency)` — converts to THB; never compare costs across currencies without this
+- `formatTHB(amount)` — formats as Thai Baht currency string
+- `formatPercent(ratio)` — formats with sign (e.g. +5.00%)
+- `formatAllocation(ratio)` — formats without sign (e.g. 60.00%), for allocation display
+- `formatDate(date)` — formats as `d Mon YYYY` (e.g. "21 May 2026")
 
 ### Supabase schema
 
