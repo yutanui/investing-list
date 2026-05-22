@@ -76,18 +76,18 @@ All components are in `src/components/` — hand-written with inline Tailwind, n
 
 | Component | Purpose |
 |---|---|
-| `app-shell.tsx` | Root layout wrapper — mounts providers and renders `Header` + `PortfolioNav` around `{children}` |
-| `header.tsx` | Top nav bar with app title, hamburger (mobile), and auth controls (Sign In / Sign Out); auto-opens `AuthDialog` in recovery mode |
+| `app-shell.tsx` | Root layout wrapper — mounts providers and renders `Header` + `<main>` around `{children}`; no sidebar |
+| `header.tsx` | Top nav bar with app title, "Add Portfolio" button (opens `PortfolioDialog`), and auth controls (Sign In / Sign Out); auto-opens `AuthDialog` in recovery mode |
 | `auth-dialog.tsx` | Modal for all auth flows — four modes: `sign_in`, `sign_up`, `reset_request` (sends email link), `reset_new_password` (set new password after recovery) |
-| `portfolio-nav.tsx` | Collapsible left sidebar with sortable portfolio list; contains the `NavPortfolioCard` sub-component (sidebar card with stats, gain/loss, core/satellite %, last-updated date) |
-| `portfolio-card.tsx` | Larger card used on the home summary page; shows portfolio name, holdings count, total value, cost, and gain/loss |
+| `portfolio-nav.tsx` | Collapsible left sidebar with sortable portfolio list (retained but not rendered — was replaced by in-page cards grid on homepage) |
+| `portfolio-card.tsx` | Card used on the home page in the portfolios grid; shows portfolio name, holdings count, total value, cost, and gain/loss |
 | `portfolio-dialog.tsx` | Modal (`<dialog>`) for creating / editing / deleting a portfolio |
 | `holding-dialog.tsx` | Modal (`<dialog>`) for creating / editing / deleting a holding; includes all fields: name, ticker, asset type, holding type, shares, average cost + currency, current price + currency, company ID, holding ID |
 | `portfolio-summary.tsx` | Stat cards grid: Market Value, Total Cost, Gain/Loss, Return %; plus a core/satellite breakdown row |
 
 Dialog pattern: all dialogs use the native `<dialog>` element (`showModal()` / `close()`), auto-focus the first input, close on Escape or backdrop click.
 
-Responsive layout: mobile shows card-based views; desktop (`sm:` breakpoint) shows table layout for holdings. The sidebar (`PortfolioNav`) is hidden off-screen on mobile and slides in as a drawer overlay, always visible on `lg:`.
+Responsive layout: mobile shows card-based views; desktop (`sm:` breakpoint) shows table layout for holdings. There is no sidebar — portfolio cards appear in a responsive grid (1 col mobile, 2 cols sm, 3 cols lg) on the home page below the summary section.
 
 ### Design tokens
 
@@ -100,7 +100,7 @@ Custom Tailwind color aliases used throughout (defined in the global CSS / Tailw
 
 | Route | File | Description |
 |---|---|---|
-| `/` | `src/app/page.tsx` | Aggregated summary across all portfolios using `PortfolioSummary` + `allHoldings` from `HoldingsProvider` |
+| `/` | `src/app/page.tsx` | Aggregated summary + sortable portfolio cards grid; editing uses `PortfolioDialog` inline; "Add Portfolio" button in `Header` also opens the dialog |
 | `/portfolio/[id]` | `src/app/portfolio/[id]/page.tsx` | Per-portfolio holdings view; desktop table + mobile card list; mounts `PortfolioProvider`; includes "Update NAV" button |
 
 ### API Routes

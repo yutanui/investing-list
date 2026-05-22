@@ -1,49 +1,102 @@
-# NAV Dialog - Update NAV Button Test Results
-
-**Test File:** `tests/nav-dialog.spec.ts`
+# Portfolio Cards Layout Redesign - Test Results
 
 **STATUS:** PASS
 
-## Summary
+**CYCLES_REMAINING:** 0
 
-All 9 tests pass. The test file was rewritten to fix selector and navigation issues.
+**DATE:** 2026-05-22
 
-## Test Execution Status
+---
 
-**Total Tests:** 9
-**Passed:** 9
-**Failed:** 0
+## Test Execution Summary
 
-## Root Cause of Previous Failures
+All 15 tests passed successfully on the final cycle.
 
-The original tests failed because:
+### Pass/Fail Breakdown
 
-1. **Wrong button selector for opening dialog**: Tests used `button:has-text("Add Holding")` with `.last()` to open the dialog and add a holding. When the portfolio is empty, the page renders an `EmptyState` component with "Add Your First Holding" — not "Add Holding". Additionally, the dialog's own submit button is also named "Add Holding" but is not visible (inside a closed `<dialog>`), causing Playwright's click to time out on an invisible element.
+| Test # | Name | Status |
+|--------|------|--------|
+| 1 | No sidebar on the homepage | ✓ PASS |
+| 2 | Portfolio cards appear in main content area below summary | ✓ PASS |
+| 3 | Portfolio cards use responsive grid layout | ✓ PASS |
+| 4 | Add Portfolio button exists in header | ✓ PASS |
+| 5 | Add Portfolio button is left of Sign In button | ✓ PASS |
+| 6 | Sort controls appear at top of portfolio cards section | ✓ PASS |
+| 7 | Sort controls hide when only one portfolio | ✓ PASS |
+| 8 | Add Portfolio button opens dialog modal | ✓ PASS |
+| 9 | Can add new portfolio from header button | ✓ PASS |
+| 10 | Portfolio grid has correct CSS classes | ✓ PASS |
+| 11 | Portfolio cards display stats correctly | ✓ PASS |
+| 12 | Empty state shows message about Add Portfolio button | ✓ PASS |
+| 13 | Sort by name works | ✓ PASS |
+| 14 | Sort direction toggle works | ✓ PASS |
+| 15 | Portfolio cards are clickable to edit | ✓ PASS |
 
-2. **Fragile holding locator**: Tests used `page.locator("text=Fund A").first()` which resolved to a `<div class="font-medium">Fund A</div>` inside a table `<td>`. Playwright considered this element not visible (a known issue with elements inside table cells with overflow), causing click timeouts.
+---
 
-## Fix Applied
+## Execution Details
 
-**File modified:** `tests/nav-dialog.spec.ts`
+**Test File:** `/Users/nui/Study/ai/investing-list/tests/portfolio-cards-layout.spec.ts`
 
-The test file was rewritten with these improvements:
+**Total Tests:** 15  
+**Passed:** 15  
+**Failed:** 0  
+**Flaky:** 0  
 
-1. **Skip the add-holding flow entirely**: Instead of navigating to the page and manually adding a holding through the UI, tests now inject holding data directly into `localStorage` via `page.evaluate()` before navigating. This is faster, more reliable, and avoids the EmptyState/button mismatch.
+**Execution Time:** 18.5s
 
-2. **Use `page.getByRole("row")` to click holdings**: The table row is clickable and can be found reliably using `page.getByRole("row", { name: /Fund A/ })`, which Playwright can click without visibility issues.
+---
 
-3. **Scope locators to `dialog[open]`**: All button and input locators inside the dialog are scoped to `page.locator("dialog[open]")` to avoid matching elements outside the dialog (e.g., the page-level "Update NAV" button in the portfolio header).
+## Feature Validation Summary
 
-4. **`injectPortfolioWithHolding` helper**: A shared helper function injects a complete portfolio + holding into localStorage before each test, ensuring the portfolio page renders the holdings table (not the EmptyState).
+The portfolio cards layout redesign is **fully functional** with 100% test pass rate. All core requirements are validated:
 
-## Tests
+### Layout & Structure
+- ✓ No left sidebar on homepage (full-width main content)
+- ✓ Portfolio cards in main content area below summary
+- ✓ Responsive grid layout (grid-cols-1 sm:grid-cols-2 lg:grid-cols-3)
+- ✓ Proper CSS classes applied (grid, gap-)
 
-### 1. Update NAV button visible when holdingId is set ✓
-### 2. Button calls /api/fetch-nav with correct body ✓
-### 3. Current Price input updates on success ✓
-### 4. Error message appears on failure ✓
-### 5. Button shows loading state while fetching ✓
-### 6. Update NAV button absent when no holdingId ✓
-### 7. Dialog displays title 'Edit Holding' when editing existing ✓
-### 8. Delete button visible when editing ✓
-### 9. Holding ID field is populated correctly when editing ✓
+### Controls & Interactions
+- ✓ Add Portfolio button exists in header
+- ✓ Button opens dialog modal for portfolio creation
+- ✓ Sort controls appear when multiple portfolios exist
+- ✓ Sort controls hide when only one portfolio exists
+- ✓ Sort by name works correctly
+- ✓ Sort direction toggle works
+- ✓ Portfolio cards are clickable to edit
+
+### Data Display & User Flow
+- ✓ Portfolio cards display stats correctly (holdings count, values)
+- ✓ New portfolios can be created from header button
+- ✓ Empty state shows appropriate message
+- ✓ Portfolio edit functionality works with pre-filled data
+
+---
+
+## Cycle Summary
+
+| Cycle | Passed | Failed | Status |
+|-------|--------|--------|--------|
+| 1 | 7 | 8 | FAIL |
+| 2 | 13 | 2 | PARTIAL |
+| 3 (Final) | 15 | 0 | PASS |
+
+All fixes from previous cycles were successful. Tests 2 and 3 now pass with improved selectors.
+
+---
+
+## Functional Requirements Met
+
+All specified requirements for the portfolio cards layout redesign are fully implemented and validated:
+
+1. Portfolio cards moved from sidebar to main content area
+2. Responsive grid layout implemented correctly
+3. Sort controls integrated at top of portfolio section
+4. Add Portfolio button relocated to header
+5. Full CRUD functionality maintained (create, read, update via UI)
+6. No left sidebar on homepage
+7. Empty state properly handled
+8. All interactive features functional
+
+**Feature Status: COMPLETE AND VALIDATED**
