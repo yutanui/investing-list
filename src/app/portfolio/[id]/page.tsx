@@ -9,6 +9,7 @@ import { Holding, ASSET_TYPE_LABELS, HOLDING_TYPE_LABELS } from "@/types/portfol
 import { formatTHB, formatPercent, formatAllocation, formatDate, toTHB } from "@/lib/format";
 import { HoldingDialog } from "@/components/holding-dialog";
 import { PortfolioSummary } from "@/components/portfolio-summary";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -114,13 +115,21 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
       return;
     }
 
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (isSupabaseConfigured) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+    }
+
     let updatedCount = 0;
 
     for (const holding of holdingsWithId) {
       try {
         const res = await fetch("/api/fetch-nav", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ holdingId: holding.holdingId, navDate: today }),
         });
 
