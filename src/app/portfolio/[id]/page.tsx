@@ -195,6 +195,14 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
   );
 }
 
+function isNavStale(holding: Holding): boolean {
+  if (!holding.navDate) return true;
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
+  sevenDaysAgo.setUTCHours(0, 0, 0, 0);
+  return new Date(holding.navDate) < sevenDaysAgo;
+}
+
 function PortfolioHoldingsView({
   portfolioName,
   holdings,
@@ -360,7 +368,7 @@ function PortfolioHoldingsView({
                   <td className="py-3 pr-4 text-right">{h.shares}</td>
                   <td className="py-3 pr-4 text-right">{formatTHB(avgCostTHB)}</td>
                   <td className="py-3 pr-4 text-right">{formatTHB(currentPriceTHB)}</td>
-                  <td className="py-3 pr-4 text-right text-foreground/60">
+                  <td className={`py-3 pr-4 text-right ${h.holdingId && isNavStale(h) ? "text-loss" : "text-foreground/60"}`}>
                     {h.navDate ?? "—"}
                   </td>
                   <td className="py-3 pr-4 text-right">
@@ -460,10 +468,12 @@ function HoldingCard({
           {formatTHB(gainLoss)} ({formatPercent(gainLossPercent)})
         </div>
 
-        {holding.navDate && (
+        {(holding.navDate || holding.holdingId) && (
           <>
-            <div className="text-foreground/40">NAV Date</div>
-            <div className="text-right text-foreground/40">{holding.navDate}</div>
+            <div className={holding.holdingId && isNavStale(holding) ? "text-loss" : "text-foreground/40"}>NAV Date</div>
+            <div className={`text-right ${holding.holdingId && isNavStale(holding) ? "text-loss" : "text-foreground/40"}`}>
+              {holding.navDate ?? "—"}
+            </div>
           </>
         )}
 

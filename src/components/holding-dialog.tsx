@@ -82,6 +82,8 @@ export function HoldingDialog({
     const form = e.currentTarget;
     const formData = new FormData(form);
 
+    const holdingIdVal = (formData.get("holdingId") as string).trim() || undefined;
+    const companyIdVal = (formData.get("companyId") as string).trim() || undefined;
     const saved: HoldingFormData = {
       id: holding?.id ?? generateId(),
       name: (formData.get("name") as string).trim(),
@@ -93,8 +95,11 @@ export function HoldingDialog({
       averageCostCurrency: formData.get("averageCostCurrency") as Currency,
       currentPrice: Number(formData.get("currentPrice")),
       currentPriceCurrency: formData.get("currentPriceCurrency") as Currency,
-      companyId: (formData.get("companyId") as string).trim() || undefined,
-      holdingId: (formData.get("holdingId") as string).trim() || undefined,
+      companyId: companyIdVal,
+      holdingId: holdingIdVal,
+      navDate: !!(holdingIdVal || companyIdVal)
+        ? new Date().toISOString().slice(0, 10)
+        : (holding?.navDate ?? undefined),
     };
 
     onSave(saved);
