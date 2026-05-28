@@ -313,8 +313,9 @@ test.describe("NAV Sync v2 - navDate preserved on manual save", () => {
     await portfolioLink.click();
     await page.waitForLoadState("networkidle");
 
-    // Click "Add Holding" button
-    const addButton = page.locator('button:has-text("Add Holding")');
+    // Click "Add Holding" button (or "Add Your First Holding" in empty state)
+    // Use a more flexible selector that matches either button text
+    const addButton = page.locator('button', { hasText: /Add.*Holding/ }).first();
     await addButton.click();
     await page.waitForLoadState("networkidle");
 
@@ -322,17 +323,18 @@ test.describe("NAV Sync v2 - navDate preserved on manual save", () => {
     const holdingDialog = page.locator("dialog[open]");
     await holdingDialog.waitFor({ state: "visible" });
 
-    // Fill in the form with holdingId
-    await page.locator('input[name="name"]').fill("New Fund With ID");
-    await page.locator('input[name="holdingId"]').fill("NEW_FUND_ID_001");
-    await page.locator('select[name="assetType"]').selectOption("mutual_fund");
-    await page.locator('select[name="holdingType"]').selectOption("core");
-    await page.locator('input[name="shares"]').fill("100");
-    await page.locator('input[name="averageCost"]').fill("100");
-    await page.locator('input[name="currentPrice"]').fill("105");
+    // Fill in the form with holdingId - scope to the dialog to avoid conflicts
+    const dialogLocator = holdingDialog;
+    await dialogLocator.locator('input[name="name"]').fill("New Fund With ID");
+    await dialogLocator.locator('input[name="holdingId"]').fill("NEW_FUND_ID_001");
+    await dialogLocator.locator('select[name="assetType"]').selectOption("mutual_fund");
+    await dialogLocator.locator('select[name="holdingType"]').selectOption("core");
+    await dialogLocator.locator('input[name="shares"]').fill("100");
+    await dialogLocator.locator('input[name="averageCost"]').fill("100");
+    await dialogLocator.locator('input[name="currentPrice"]').fill("105");
 
-    // Save the holding
-    const saveButton = page.locator('button:has-text("Add Holding")');
+    // Save the holding - in the dialog, the button is "Add Holding"
+    const saveButton = dialogLocator.locator('button[type="submit"]').first();
     await saveButton.click();
     await page.waitForLoadState("networkidle");
 
