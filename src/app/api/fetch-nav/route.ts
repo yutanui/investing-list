@@ -98,9 +98,9 @@ export async function POST(req: NextRequest): Promise<NextResponse<FetchNavRespo
     );
   }
 
-  // Try today, today-1, today-2, today-3
+  // Try today, today-1, …, today-6
   let lastFetchError: string | undefined;
-  for (let offset = 0; offset >= -3; offset--) {
+  for (let offset = 0; offset >= -6; offset--) {
     const attemptDate = offset === 0 ? navDate : addDays(navDate, offset);
     try {
       const records = await fetchNavForDate(holdingId, attemptDate, apiKey);
@@ -116,6 +116,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<FetchNavRespo
     }
   }
 
-  const error = lastFetchError ?? "No NAV data found for the last 4 days";
+  const error = lastFetchError ?? "No NAV data found for the last 7 days";
   return NextResponse.json({ lastVal: null, navDate: null, error });
 }
