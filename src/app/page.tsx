@@ -30,6 +30,7 @@ export default function HomePage() {
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
   const [dialogKey, setDialogKey] = useState(0);
   const [syncState, setSyncState] = useState<SyncState>("idle");
+  const [syncingPortfolioName, setSyncingPortfolioName] = useState<string | null>(null);
 
   async function syncNavPrices() {
     setSyncState("loading");
@@ -46,10 +47,9 @@ export default function HomePage() {
       }
 
       if (isSupabaseConfigured) {
-        // Supabase path: query all mutual_fund holdings with a holdingId
         const { data, error } = await supabase
           .from("holdings")
-          .select("id, holding_id, asset_type, nav_date");
+          .select("id, holding_id, asset_type, nav_date, portfolio_id");
 
         if (error) throw new Error(error.message);
 
@@ -58,13 +58,25 @@ export default function HomePage() {
         );
 
         if (targets.length === 0) {
+          setSyncingPortfolioName(null);
           setSyncState("success");
           setTimeout(() => setSyncState("idle"), 2000);
           return;
         }
 
-        await Promise.all(
-          targets.map(async (row) => {
+        // Group by portfolio
+        const portfolioMap = new Map<string, { name: string; rows: typeof targets }>();
+        for (const row of targets) {
+          const pid = row.portfolio_id as string;
+          const name = portfolios.find((p) => p.id === pid)?.name ?? pid;
+          if (!portfolioMap.has(pid)) portfolioMap.set(pid, { name, rows: [] });
+          portfolioMap.get(pid)!.rows.push(row);
+        }
+
+        // Process each portfolio sequentially
+        for (const [, group] of portfolioMap) {
+          setSyncingPortfolioName(group.name);
+          for (const row of group.rows) {
             try {
               const res = await fetch("/api/fetch-nav", {
                 method: "POST",
@@ -72,13 +84,9 @@ export default function HomePage() {
                 body: JSON.stringify({ holdingId: row.holding_id, navDate: today }),
               });
 
-              if (!res.ok) return;
+              if (!res.ok) continue;
 
-              const result = (await res.json()) as {
-                lastVal: number | null;
-                navDate: string | null;
-                error?: string;
-              };
+              const result = (await res.json()) as { lastVal: number | null; navDate: string | null };
 
               if (result.lastVal !== null) {
                 await supabase
@@ -93,23 +101,34 @@ export default function HomePage() {
             } catch {
               // Skip this holding on network error
             }
-          })
-        );
+          }
+        }
       } else {
         // localStorage path
-        const allStoredHoldings = loadHoldings();
-        const targets = allStoredHoldings.filter(
+        const targets = loadHoldings().filter(
           (h) => h.assetType === "mutual_fund" && h.holdingId && h.holdingId.trim() !== ""
         );
 
         if (targets.length === 0) {
+          setSyncingPortfolioName(null);
           setSyncState("success");
           setTimeout(() => setSyncState("idle"), 2000);
           return;
         }
 
-        const updates = await Promise.all(
-          targets.map(async (holding) => {
+        // Group by portfolio
+        const portfolioMapLS = new Map<string, { name: string; holdings: typeof targets }>();
+        for (const h of targets) {
+          const name = portfolios.find((p) => p.id === h.portfolioId)?.name ?? h.portfolioId;
+          if (!portfolioMapLS.has(h.portfolioId)) portfolioMapLS.set(h.portfolioId, { name, holdings: [] });
+          portfolioMapLS.get(h.portfolioId)!.holdings.push(h);
+        }
+
+        const allStoredHoldings = loadHoldings();
+
+        for (const [, group] of portfolioMapLS) {
+          setSyncingPortfolioName(group.name);
+          for (const holding of group.holdings) {
             try {
               const res = await fetch("/api/fetch-nav", {
                 method: "POST",
@@ -117,51 +136,36 @@ export default function HomePage() {
                 body: JSON.stringify({ holdingId: holding.holdingId, navDate: today }),
               });
 
-              if (!res.ok) return null;
+              if (!res.ok) continue;
 
-              const result = (await res.json()) as {
-                lastVal: number | null;
-                navDate: string | null;
-                error?: string;
-              };
+              const result = (await res.json()) as { lastVal: number | null; navDate: string | null };
 
               if (result.lastVal !== null) {
-                return {
-                  id: holding.id,
-                  currentPrice: result.lastVal,
-                  navDate: result.navDate ?? undefined,
-                };
+                const idx = allStoredHoldings.findIndex((s) => s.id === holding.id);
+                if (idx !== -1) {
+                  allStoredHoldings[idx] = {
+                    ...allStoredHoldings[idx],
+                    currentPrice: result.lastVal,
+                    currentPriceCurrency: "THB" as const,
+                    navDate: result.navDate ?? undefined,
+                  };
+                }
               }
             } catch {
               // Skip this holding on network error
             }
-            return null;
-          })
-        );
-
-        const validUpdates = updates.filter(
-          (u): u is { id: string; currentPrice: number; navDate: string | undefined } => u !== null
-        );
-
-        if (validUpdates.length > 0) {
-          const updatedHoldings = allStoredHoldings.map((h) => {
-            const update = validUpdates.find((u) => u.id === h.id);
-            if (!update) return h;
-            return {
-              ...h,
-              currentPrice: update.currentPrice,
-              currentPriceCurrency: "THB" as const,
-              navDate: update.navDate,
-            };
-          });
-          saveHoldings(updatedHoldings);
+          }
         }
+
+        saveHoldings(allStoredHoldings);
       }
 
+      setSyncingPortfolioName(null);
       reloadAllHoldings();
       setSyncState("success");
       setTimeout(() => setSyncState("idle"), 2000);
     } catch {
+      setSyncingPortfolioName(null);
       setSyncState("error");
       setTimeout(() => setSyncState("idle"), 3000);
     }
@@ -292,7 +296,11 @@ export default function HomePage() {
                   <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  Syncing...
+                  {syncingPortfolioName ? (
+                    <span className="max-w-[120px] truncate">{syncingPortfolioName}</span>
+                  ) : (
+                    "Syncing..."
+                  )}
                 </>
               ) : syncState === "success" ? (
                 <>
