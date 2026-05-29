@@ -95,6 +95,7 @@ export default function HomePage() {
                     current_price: result.lastVal,
                     current_price_currency: "THB",
                     nav_date: result.navDate,
+                    updated_at: new Date().toISOString(),
                   })
                   .eq("id", row.id);
               }
@@ -148,6 +149,7 @@ export default function HomePage() {
                     currentPrice: result.lastVal,
                     currentPriceCurrency: "THB" as const,
                     navDate: result.navDate ?? undefined,
+                    updatedAt: new Date(),
                   };
                 }
               }
