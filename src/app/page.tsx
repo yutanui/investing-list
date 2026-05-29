@@ -58,7 +58,8 @@ export default function HomePage() {
         );
 
         if (targets.length === 0) {
-          setSyncState("idle");
+          setSyncState("success");
+          setTimeout(() => setSyncState("idle"), 2000);
           return;
         }
 
@@ -102,7 +103,8 @@ export default function HomePage() {
         );
 
         if (targets.length === 0) {
-          setSyncState("idle");
+          setSyncState("success");
+          setTimeout(() => setSyncState("idle"), 2000);
           return;
         }
 
