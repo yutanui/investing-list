@@ -7,9 +7,12 @@ import { PortfolioSummary } from "@/components/portfolio-summary";
 import { PortfolioCard } from "@/components/portfolio-card";
 import { PortfolioDialog } from "@/components/portfolio-dialog";
 import { Portfolio } from "@/types/portfolio";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { loadHoldings, saveHoldings } from "@/lib/storage";
 
 type SortKey = "name" | "amount" | "returns";
 type SortDirection = "asc" | "desc";
+type SyncState = "idle" | "loading" | "success" | "error";
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "name", label: "Name" },
@@ -19,13 +22,148 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 
 export default function HomePage() {
   const { portfolios, loading: portfoliosLoading, addPortfolio, updatePortfolio, removePortfolio } = usePortfolioList();
-  const { allHoldings, loading: holdingsLoading, getPortfolioStats } = useAllHoldings();
+  const { allHoldings, loading: holdingsLoading, getPortfolioStats, reload: reloadAllHoldings } = useAllHoldings();
 
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
   const [dialogKey, setDialogKey] = useState(0);
+  const [syncState, setSyncState] = useState<SyncState>("idle");
+
+  async function syncNavPrices() {
+    setSyncState("loading");
+
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (isSupabaseConfigured) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+      }
+
+      if (isSupabaseConfigured) {
+        // Supabase path: query all mutual_fund holdings with a holdingId
+        const { data, error } = await supabase
+          .from("holdings")
+          .select("id, holding_id, asset_type, nav_date");
+
+        if (error) throw new Error(error.message);
+
+        const targets = (data ?? []).filter(
+          (row) => row.asset_type === "mutual_fund" && row.holding_id && row.holding_id.trim() !== ""
+        );
+
+        if (targets.length === 0) {
+          setSyncState("idle");
+          return;
+        }
+
+        await Promise.all(
+          targets.map(async (row) => {
+            try {
+              const res = await fetch("/api/fetch-nav", {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ holdingId: row.holding_id, navDate: today }),
+              });
+
+              if (!res.ok) return;
+
+              const result = (await res.json()) as {
+                lastVal: number | null;
+                navDate: string | null;
+                error?: string;
+              };
+
+              if (result.lastVal !== null) {
+                await supabase
+                  .from("holdings")
+                  .update({
+                    current_price: result.lastVal,
+                    current_price_currency: "THB",
+                    nav_date: result.navDate,
+                  })
+                  .eq("id", row.id);
+              }
+            } catch {
+              // Skip this holding on network error
+            }
+          })
+        );
+      } else {
+        // localStorage path
+        const allStoredHoldings = loadHoldings();
+        const targets = allStoredHoldings.filter(
+          (h) => h.assetType === "mutual_fund" && h.holdingId && h.holdingId.trim() !== ""
+        );
+
+        if (targets.length === 0) {
+          setSyncState("idle");
+          return;
+        }
+
+        const updates = await Promise.all(
+          targets.map(async (holding) => {
+            try {
+              const res = await fetch("/api/fetch-nav", {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ holdingId: holding.holdingId, navDate: today }),
+              });
+
+              if (!res.ok) return null;
+
+              const result = (await res.json()) as {
+                lastVal: number | null;
+                navDate: string | null;
+                error?: string;
+              };
+
+              if (result.lastVal !== null) {
+                return {
+                  id: holding.id,
+                  currentPrice: result.lastVal,
+                  navDate: result.navDate ?? undefined,
+                };
+              }
+            } catch {
+              // Skip this holding on network error
+            }
+            return null;
+          })
+        );
+
+        const validUpdates = updates.filter(
+          (u): u is { id: string; currentPrice: number; navDate: string | undefined } => u !== null
+        );
+
+        if (validUpdates.length > 0) {
+          const updatedHoldings = allStoredHoldings.map((h) => {
+            const update = validUpdates.find((u) => u.id === h.id);
+            if (!update) return h;
+            return {
+              ...h,
+              currentPrice: update.currentPrice,
+              currentPriceCurrency: "THB" as const,
+              navDate: update.navDate,
+            };
+          });
+          saveHoldings(updatedHoldings);
+        }
+      }
+
+      reloadAllHoldings();
+      setSyncState("success");
+      setTimeout(() => setSyncState("idle"), 2000);
+    } catch {
+      setSyncState("error");
+      setTimeout(() => setSyncState("idle"), 3000);
+    }
+  }
 
   if (portfoliosLoading || holdingsLoading) {
     return (
@@ -135,38 +273,82 @@ export default function HomePage() {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold tracking-tight">Portfolios</h3>
 
-          {/* Sort controls — shown when there are multiple portfolios */}
-          {portfolios.length > 1 && (
-            <div className="flex items-center gap-2">
-              <select
-                value={sortKey}
-                onChange={(e) => setSortKey(e.target.value as SortKey)}
-                className="rounded-md border border-foreground/20 bg-background px-2 py-1.5 text-xs text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-                aria-label="Sort portfolios by"
-              >
-                {SORT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => setSortDirection((d) => (d === "asc" ? "desc" : "asc"))}
-                className="inline-flex items-center gap-1 rounded-md border border-foreground/20 px-2 py-1.5 text-xs text-foreground/80 hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-                aria-label={`Sort ${sortDirection === "asc" ? "ascending" : "descending"}`}
-              >
-                {sortDirection === "asc" ? (
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m6-6v12m0 0-3.75-3.75M14.25 19.5l3.75-3.75" />
+          <div className="flex items-center gap-2">
+            {/* Sync NAV button */}
+            <button
+              type="button"
+              onClick={syncNavPrices}
+              disabled={syncState === "loading"}
+              className={[
+                "inline-flex items-center gap-1.5 rounded-md border border-foreground/20 px-3 py-2 text-sm font-medium text-foreground/80 hover:border-foreground/40 hover:bg-foreground/[0.04] focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+                syncState === "success" ? "text-gain" : "",
+                syncState === "error" ? "text-loss" : "",
+              ].join(" ").trim()}
+            >
+              {syncState === "loading" ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                ) : (
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 19.5l3.75-3.75" />
+                  Syncing...
+                </>
+              ) : syncState === "success" ? (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
-                )}
-                {sortDirection === "asc" ? "Asc" : "Desc"}
-              </button>
-            </div>
-          )}
+                  Synced
+                </>
+              ) : syncState === "error" ? (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                  </svg>
+                  Sync failed
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                  </svg>
+                  Sync NAV
+                </>
+              )}
+            </button>
+
+            {/* Sort controls — shown when there are multiple portfolios */}
+            {portfolios.length > 1 && (
+              <>
+                <select
+                  value={sortKey}
+                  onChange={(e) => setSortKey(e.target.value as SortKey)}
+                  className="rounded-md border border-foreground/20 bg-background px-2 py-1.5 text-xs text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                  aria-label="Sort portfolios by"
+                >
+                  {SORT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setSortDirection((d) => (d === "asc" ? "desc" : "asc"))}
+                  className="inline-flex items-center gap-1 rounded-md border border-foreground/20 px-2 py-1.5 text-xs text-foreground/80 hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                  aria-label={`Sort ${sortDirection === "asc" ? "ascending" : "descending"}`}
+                >
+                  {sortDirection === "asc" ? (
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m6-6v12m0 0-3.75-3.75M14.25 19.5l3.75-3.75" />
+                    </svg>
+                  ) : (
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 19.5l3.75-3.75" />
+                    </svg>
+                  )}
+                  {sortDirection === "asc" ? "Asc" : "Desc"}
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
