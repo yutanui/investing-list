@@ -1,4 +1,4 @@
-import { Holding, Portfolio, Currency, HoldingType } from "@/types/portfolio";
+import { Holding, Portfolio, Currency, HoldingType, BucketSettings, DEFAULT_BUCKET_SETTINGS } from "@/types/portfolio";
 
 /**
  * Versioned localStorage utility.
@@ -92,6 +92,37 @@ export function saveHoldings(holdings: Holding[]): void {
 
   try {
     localStorage.setItem(HOLDINGS_KEY, JSON.stringify(holdings));
+  } catch {
+    // Storage full or unavailable — fail silently
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Bucket Settings Storage
+// ─────────────────────────────────────────────────────────────
+
+const BUCKET_SETTINGS_KEY = "bucket_settings";
+
+export function loadBucketSettings(): BucketSettings {
+  if (typeof window === "undefined") return DEFAULT_BUCKET_SETTINGS;
+  try {
+    const raw = localStorage.getItem(BUCKET_SETTINGS_KEY);
+    if (!raw) return DEFAULT_BUCKET_SETTINGS;
+    const parsed = JSON.parse(raw) as Partial<BucketSettings>;
+    return {
+      bucket1Target: parsed.bucket1Target ?? 0,
+      bucket2Target: parsed.bucket2Target ?? 0,
+      bucket3Target: parsed.bucket3Target ?? 0,
+    };
+  } catch {
+    return DEFAULT_BUCKET_SETTINGS;
+  }
+}
+
+export function saveBucketSettings(settings: BucketSettings): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(BUCKET_SETTINGS_KEY, JSON.stringify(settings));
   } catch {
     // Storage full or unavailable — fail silently
   }

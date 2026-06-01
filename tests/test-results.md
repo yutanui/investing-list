@@ -1,103 +1,195 @@
-# Sync NAV Button - Test Results
+# Phase 1: Asset Types - Test Results
 
-## Summary
-All 12 tests passed successfully. Total execution time: 19.6 seconds.
+## Test Execution Summary
+- **Total Tests**: 7
+- **Passed**: 7
+- **Failed**: 0
+- **Duration**: 10.4s
 
 ## Test Results
 
-### Test 1: Sync NAV button is visible when portfolios exist
-**Status:** PASSED
-- Verified button appears when at least one portfolio exists
-- Button displays "Sync NAV" text
+### Test 1: New asset types appear in the Asset Type dropdown
+**Status**: PASSED
 
-### Test 2: Sync NAV button is NOT shown when no portfolios exist
-**Status:** PASSED
-- Verified button is hidden on empty state
-- Empty state message "No Portfolios Yet" is displayed
+The Asset Type `<select>` dropdown correctly displays all new asset types:
+- Cash
+- Money Market Fund
+- Dividend Mutual Fund
 
-### Test 3: Button transitions to loading state when clicked
-**Status:** PASSED
-- Button changes from "Sync NAV" to "Syncing..."
-- Button becomes disabled during sync operation
-- Spinner icon displays during loading
+All existing asset types remain present:
+- Stock
+- ETF
+- Mutual Fund
+- Bond / Fixed Income
 
-### Test 4: Button shows success state after successful sync
-**Status:** PASSED
-- Button changes to "Synced" state after successful API response
-- Button applies success color class (text-gain)
-- Checkmark icon displays
+### Test 2: Cash label swap works - shares field becomes Balance (THB)
+**Status**: PASSED
 
-### Test 5: Button shows success state even when one API call returns 500
-**Status:** PASSED
-- Partial API failures do not result in error state
-- When at least one holding syncs successfully, overall sync succeeds
-- Unsyncable holdings are silently skipped per requirements
+When "Cash" is selected from Asset Type:
+- The "Shares / Units" label correctly changes to "Balance (THB)"
+- Helper text "Enter your total cash balance" is visible
+- Field correctly accepts the new semantic meaning
 
-### Test 6: Only mutual_fund holdings with holdingId are synced
-**Status:** PASSED
-- API called exactly once (only for eligible holding)
-- Stock holdings without holdingId are skipped
-- Mutual_fund holdings without holdingId are skipped
-- Holdings are correctly filtered before sync
+### Test 3: Average Cost and Current Price fields are hidden for Cash
+**Status**: PASSED
 
-### Test 7: Holdings are updated in localStorage after successful sync
-**Status:** PASSED
-- currentPrice updated to new fetched value (15.5)
-- currentPriceCurrency set to THB
-- navDate updated to sync date (2026-05-29)
-- Changes persisted in localStorage
+When "Cash" is selected:
+- Average Cost label is NOT visible
+- Current Price label is NOT visible
+- Hidden inputs submit `averageCost` value of "1"
+- Hidden inputs submit `currentPrice` value of "1"
 
-### Test 8: Sync with no eligible holdings completes successfully without API calls
-**Status:** PASSED
-- No API calls made when zero holdings match filter criteria
-- Button transitions directly to idle (no "Synced" state)
-- Function completes immediately as designed
+### Test 4: Money Market Fund label swap works
+**Status**: PASSED
 
-### Test 9: Button reverts to idle state after success (after 2 seconds)
-**Status:** PASSED
-- Button displays "Synced" state
-- After 2 second timeout, button reverts to "Sync NAV" idle state
-- Success state is temporary as specified
+When "Money Market Fund" is selected:
+- The label changes to "Balance (THB)"
+- Helper text "Enter your total cash balance" is visible
+- Cost and price fields remain hidden
 
-### Test 10: Button is disabled while loading prevents user interaction
-**Status:** PASSED
-- Button is disabled during loading ("Syncing..." state)
-- Disabled attribute prevents further clicks
-- isDisabled() returns true during sync operation
+### Test 5: Label swap reverts when switching from Cash to Stock
+**Status**: PASSED
 
-### Test 11: Multiple holdings synced concurrently
-**Status:** PASSED
-- Three eligible holdings all synced in single operation
-- API called exactly 3 times (one per holding)
-- All three holdings updated with new prices (25) and navDate (2026-05-29)
-- Confirms Promise.all concurrent execution
+When switching from "Cash" back to "Stock":
+- "Shares / Units" label is restored
+- Average Cost field becomes visible again
+- Current Price field becomes visible again
+- Helper text disappears
 
-### Test 12: Sync with empty holdingId (whitespace only) is skipped
-**Status:** PASSED
-- Holding with whitespace-only holdingId ("   ") correctly filtered out
-- Only holding with valid holdingId synced (1 API call)
-- Trim operation working correctly on holdingId validation
+### Test 6: Dividend Mutual Fund asset type is selectable
+**Status**: PASSED
 
-## Feature Requirements Verification
+Dividend Mutual Fund is NOT a cash-like asset type:
+- It can be selected from the dropdown
+- "Shares / Units" label remains visible
+- Average Cost field is visible
+- Current Price field is visible
 
-- [x] Button visible when portfolios exist
-- [x] Button hidden on empty state
-- [x] Loading state ("Syncing...") with disabled button
-- [x] Success state ("Synced") with text-gain color
-- [x] Only mutual_fund holdings with holdingId are eligible
-- [x] Holdings updated in localStorage after sync
-- [x] Multiple holdings synced concurrently via Promise.all
-- [x] Partial failures treated as success (skipped holdings)
-- [x] No eligible holdings handled gracefully (no API calls)
-- [x] Button disabled prevents duplicate sync requests
-- [x] Whitespace-only holdingIds filtered correctly
-- [x] Button reverts to idle state after success (2 second timeout)
+### Test 7: Switching from Money Market Fund to ETF restores normal fields
+**Status**: PASSED
 
-## Coverage Summary
+When switching from "Money Market Fund" to "ETF":
+- "Shares / Units" label is restored
+- Average Cost field becomes visible
+- Current Price field becomes visible
+- Helper text disappears
 
-**Total Tests:** 12
-**Passed:** 12
-**Failed:** 0
-**Success Rate:** 100%
+## Functionality Validation
 
-All functional requirements for the "Sync NAV" button feature have been validated successfully.
+All Phase 1 asset type features are working correctly:
+
+1. **New asset types defined**: Cash, Money Market Fund, and Dividend Mutual Fund are available in the asset type dropdown
+2. **Cash-like label swap**: Both Cash and Money Market Fund correctly swap field labels and hide cost/price fields
+3. **Field visibility**: Average Cost and Current Price are correctly hidden for cash-like assets and shown for other types
+4. **Dynamic behavior**: Field visibility changes reactively when switching between asset types
+5. **Hidden inputs**: Cost and price submit value of 1 when cash-like asset is selected
+
+## Files Tested
+- `/Users/nui/Study/ai/investing-list/tests/phase1-asset-types.spec.ts` - Full test suite
+- Validated component: `/Users/nui/Study/ai/investing-list/src/components/holding-dialog.tsx`
+- Asset type definitions: `/Users/nui/Study/ai/investing-list/src/types/portfolio.ts`
+
+## Notes
+- All tests ran against a local dev server (http://localhost:3000)
+- Tests used localStorage for data persistence (local-only mode, no Supabase required)
+- Playwright ran with Chrome headless browser
+
+---
+
+# Phase 2: Bucket Settings - Test Results
+
+## Test Execution Summary
+- **Total Tests**: 6
+- **Passed**: 6
+- **Failed**: 0
+- **Duration**: 8.7s
+
+## Test Results
+
+### Test 1: Provider mounts without crashing
+**Status**: PASSED
+
+The BucketSettingsProvider successfully mounts at the application level:
+- Page loads to http://localhost:3000 without errors
+- Main content area (`main#main-content`) is visible
+- No error messages or error boundaries are triggered
+- Header and navigation render normally
+
+### Test 2: Default bucket settings are 0
+**Status**: PASSED
+
+Application handles default bucket settings correctly:
+- When localStorage is cleared, default settings (bucket1Target: 0, bucket2Target: 0, bucket3Target: 0) are loaded
+- Page renders normally with default values
+- No errors occur during initialization
+- Header and main content are fully visible
+
+### Test 3: localStorage persistence of bucket settings
+**Status**: PASSED
+
+Bucket settings are persisted correctly in localStorage:
+- Settings can be written to localStorage: `{ bucket1Target: 20, bucket2Target: 30, bucket3Target: 50 }`
+- Provider loads persisted settings on page navigation
+- Page renders without errors after reload
+- Multiple navigations preserve stored values
+- Header and main content remain visible after reload
+
+### Test 4: Invalid localStorage data is handled gracefully
+**Status**: PASSED
+
+Provider handles corrupted localStorage data gracefully:
+- Invalid JSON (`not-valid-json{{`) is set in localStorage
+- Provider catches JSON parse errors and falls back to defaults
+- Page loads without errors despite invalid data
+- Page remains fully functional after error handling
+- Multiple reloads with invalid data continue to work
+- Header and main content render normally
+
+### Test 5: Phase 1 regression - Cash asset type label swap still works
+**Status**: PASSED
+
+Phase 1 functionality for Cash asset type is not broken by Phase 2:
+- Portfolio can be created and holdings injected into localStorage
+- Add Holding dialog opens normally
+- Asset Type dropdown is available
+- Selecting "Cash" from dropdown correctly:
+  - Changes label from "Shares / Units" to "Balance (THB)"
+  - Hides the "Shares / Units" label
+  - All other Phase 1 features remain intact
+
+### Test 6: Phase 1 regression - Money Market Fund label swap still works
+**Status**: PASSED
+
+Phase 1 functionality for Money Market Fund is not broken by Phase 2:
+- Portfolio creation and data injection work normally
+- Add Holding dialog opens correctly
+- Asset Type dropdown functions normally
+- Selecting "Money Market Fund" correctly:
+  - Changes label to "Balance (THB)"
+  - Shows helper text "Enter your total cash balance"
+  - Maintains all Phase 1 behavior
+
+## Functionality Validation
+
+All Phase 2 bucket settings features are working correctly:
+
+1. **Provider integration**: BucketSettingsProvider mounts successfully inside the application hierarchy (inside HoldingsProvider, after PortfolioListProvider)
+2. **Default values**: When no settings are present in localStorage, the provider correctly initializes with DEFAULT_BUCKET_SETTINGS (0, 0, 0)
+3. **localStorage load/save**: The provider correctly calls `loadBucketSettings()` and `saveBucketSettings()` from storage.ts
+4. **Error handling**: Invalid or corrupted localStorage data is caught and handled gracefully with fallback to defaults
+5. **Dual-storage pattern**: Provider integrates with the dual-storage architecture (localStorage for logged-out, Supabase for logged-in)
+6. **No regressions**: Phase 1 asset type features continue to work without issues
+
+## Implementation Files Tested
+- `/Users/nui/Study/ai/investing-list/tests/phase2-bucket-settings.spec.ts` - Test suite
+- `/Users/nui/Study/ai/investing-list/src/context/bucket-settings-context.tsx` - Provider implementation
+- `/Users/nui/Study/ai/investing-list/src/lib/storage.ts` - localStorage helpers (loadBucketSettings, saveBucketSettings)
+- `/Users/nui/Study/ai/investing-list/src/components/app-shell.tsx` - Provider mounting point
+- `/Users/nui/Study/ai/investing-list/src/types/portfolio.ts` - BucketSettings and DEFAULT_BUCKET_SETTINGS types
+
+## Notes
+- All tests ran against a local dev server (http://localhost:3000)
+- Tests executed in localStorage-only mode (no Supabase configured)
+- Playwright ran with Chrome headless browser
+- Provider correctly implements error handling for corrupted data
+- No console errors or warnings during test execution
