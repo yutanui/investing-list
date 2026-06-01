@@ -1,5 +1,5 @@
-import { Holding, HoldingType } from "@/types/portfolio";
-import { formatTHB, formatPercent, formatAllocation, toTHB } from "@/lib/format";
+import { Holding } from "@/types/portfolio";
+import { formatTHB, formatPercent, toTHB } from "@/lib/format";
 
 interface PortfolioSummaryProps {
   holdings: Holding[];
@@ -18,14 +18,6 @@ export function PortfolioSummary({ holdings }: PortfolioSummaryProps) {
   );
   const gainLoss = totalMarketValue - totalCost;
   const returnPct = totalCost > 0 ? gainLoss / totalCost : 0;
-
-  // Type breakdown
-  const typeValues = (["core", "satellite"] as HoldingType[]).map((type) => {
-    const value = holdings
-      .filter((h) => (h.holdingType ?? "core") === type)
-      .reduce((sum, h) => sum + h.shares * toTHB(h.currentPrice, h.currentPriceCurrency), 0);
-    return { type, value, percent: totalMarketValue > 0 ? value / totalMarketValue : 0 };
-  });
 
   const gainLossColor =
     gainLoss > 0
@@ -50,18 +42,6 @@ export function PortfolioSummary({ holdings }: PortfolioSummaryProps) {
           valueClassName={gainLossColor}
         />
       </dl>
-
-      {holdings.length > 0 && (
-        <dl className="grid grid-cols-2 gap-3">
-          {typeValues.map(({ type, value, percent }) => (
-            <SummaryCard
-              key={type}
-              label={`${type === "core" ? "Core" : "Satellite"}`}
-              value={`${formatTHB(value)} (${formatAllocation(percent)})`}
-            />
-          ))}
-        </dl>
-      )}
     </div>
   );
 }

@@ -112,7 +112,9 @@ Custom Tailwind color aliases used throughout (defined in the global CSS / Tailw
 ### Data model (`src/types/portfolio.ts`)
 
 - `Portfolio`: `{ id, name }`
-- `Holding`: belongs to one portfolio; has `assetType` (stock/etf/mutual_fund/bond), `holdingType` (core/satellite), `shares`, `averageCost`/`currentPrice` each with a `Currency` (THB/USD), plus optional `ticker`, `companyId`, `holdingId`, `navDate` (last fetched NAV date string), and `updatedAt` (set by DB trigger)
+- `Holding`: belongs to one portfolio; has `assetType` (stock/etf/mutual_fund/bond/cash/money_market_fund/dividend_mutual_fund), `holdingType` (core/satellite), `shares`, `averageCost`/`currentPrice` each with a `Currency` (THB/USD), plus optional `ticker`, `companyId`, `holdingId`, `navDate` (last fetched NAV date string), and `updatedAt` (set by DB trigger)
+- `BucketId`: `1 | 2 | 3` — bucket strategy identifiers; `ASSET_TYPE_BUCKET` maps every `AssetType` to a `BucketId`; `BucketSettings` / `DEFAULT_BUCKET_SETTINGS` hold per-user target allocations (Phase 2 will add a provider/persistence layer)
+- Cash-like asset types (`cash`, `money_market_fund`): in `HoldingDialog` the "Shares / Units" label becomes "Balance (THB)" and Average Cost / Current Price fields are hidden — both are submitted as `1` via hidden inputs so `shares * 1 = THB balance`
 
 ### Currency and formatting (`src/lib/format.ts`)
 
@@ -133,6 +135,8 @@ SQL migrations are in `supabase/` (run manually via Supabase SQL Editor in order
 5. `005_add_updated_at_trigger.sql` — `updated_at` timestamp on holdings, auto-updated by trigger
 6. `006_add_company_holding_ids.sql` — optional `company_id` and `holding_id` columns on holdings
 7. `007_add_nav_date.sql` — optional `nav_date` TEXT column on holdings
+8. `008_add_bucket_settings.sql` — `bucket_settings` table (user_id PK, bucket1–3 targets, RLS, updated_at trigger)
+9. `009_add_asset_types.sql` — drops and recreates `holdings_asset_type_check` to include `cash`, `money_market_fund`, `dividend_mutual_fund`
 
 DB column naming is snake_case; TypeScript field naming is camelCase. Context files contain mapper functions (`rowToHolding`, `rowToPortfolio`) for conversion.
 

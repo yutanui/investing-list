@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, use, useCallback, useEffect, useState } from "react";
-import { Holding, HoldingType, Currency } from "@/types/portfolio";
+import { Holding, HoldingType, AssetType, Currency } from "@/types/portfolio";
 import { loadHoldings } from "@/lib/storage";
 import { useAuth } from "@/context/auth-context";
 import { supabase } from "@/lib/supabase";
@@ -50,7 +50,7 @@ export function HoldingsProvider({ children }: { children: React.ReactNode }) {
     const loadData = user
       ? supabase
           .from("holdings")
-          .select("id, portfolio_id, holding_type, shares, current_price, current_price_currency, avg_cost, avg_cost_currency, updated_at")
+          .select("id, portfolio_id, name, asset_type, holding_type, shares, current_price, current_price_currency, avg_cost, avg_cost_currency, updated_at")
           .then(({ data, error }) => {
             if (error) {
               console.error("Failed to load holdings:", error.message);
@@ -59,6 +59,8 @@ export function HoldingsProvider({ children }: { children: React.ReactNode }) {
             return (data ?? []).map((row) => ({
               id: row.id,
               portfolioId: row.portfolio_id,
+              name: row.name ?? "",
+              assetType: (row.asset_type ?? "stock") as AssetType,
               holdingType: (row.holding_type ?? "core") as HoldingType,
               shares: Number(row.shares),
               currentPrice: Number(row.current_price),

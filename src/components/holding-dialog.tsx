@@ -40,6 +40,7 @@ export function HoldingDialog({
   const [navLoading, setNavLoading] = useState(false);
   const [navError, setNavError] = useState<string | null>(null);
   const [priceValue, setPriceValue] = useState<string>("");
+  const [assetType, setAssetType] = useState<AssetType>(holding?.assetType ?? "stock");
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -48,6 +49,7 @@ export function HoldingDialog({
     if (open) {
       dialog.showModal();
       setPriceValue(holding?.currentPrice?.toString() ?? "");
+      setAssetType(holding?.assetType ?? "stock");
       requestAnimationFrame(() => firstInputRef.current?.focus());
     } else {
       dialog.close();
@@ -55,7 +57,7 @@ export function HoldingDialog({
       setNavError(null);
       setNavLoading(false);
     }
-  }, [open, holding?.currentPrice]);
+  }, [open, holding?.currentPrice, holding?.assetType]);
 
   // Handle native dialog close (Escape key)
   useEffect(() => {
@@ -152,6 +154,8 @@ export function HoldingDialog({
     }
   }
 
+  const isCashLike = assetType === "cash" || assetType === "money_market_fund";
+
   return (
     <dialog
       ref={dialogRef}
@@ -222,7 +226,8 @@ export function HoldingDialog({
                 id="holding-asset-type"
                 name="assetType"
                 required
-                defaultValue={holding?.assetType ?? "stock"}
+                value={assetType}
+                onChange={(e) => setAssetType(e.target.value as AssetType)}
                 className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
               >
                 {ASSET_TYPES.map(([value, label]) => (
@@ -253,10 +258,10 @@ export function HoldingDialog({
               </select>
             </div>
 
-            {/* Shares / Units */}
+            {/* Shares / Units — or Balance for cash-like assets */}
             <div>
               <label htmlFor="holding-shares" className="block text-sm font-medium">
-                Shares / Units
+                {isCashLike ? "Balance (THB)" : "Shares / Units"}
               </label>
               <input
                 id="holding-shares"
@@ -267,80 +272,97 @@ export function HoldingDialog({
                 min="0"
                 step="any"
                 defaultValue={holding?.shares ?? ""}
-                placeholder="e.g. 100…"
+                placeholder={isCashLike ? "e.g. 50000…" : "e.g. 100…"}
                 autoComplete="off"
                 className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
               />
+              {isCashLike && (
+                <p className="mt-1 text-xs text-foreground/50">Enter your total cash balance</p>
+              )}
             </div>
 
-            {/* Average Cost */}
-            <div>
-              <label htmlFor="holding-avg-cost" className="block text-sm font-medium">
-                Average Cost <span className="font-normal text-foreground/50">(per unit)</span>
-              </label>
-              <div className="mt-1 flex gap-2">
-                <input
-                  id="holding-avg-cost"
-                  name="averageCost"
-                  type="number"
-                  inputMode="decimal"
-                  required
-                  min="0"
-                  step="any"
-                  defaultValue={holding?.averageCost ?? ""}
-                  placeholder="e.g. 120.50…"
-                  autoComplete="off"
-                  className="block flex-1 rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-                />
-                <select
-                  id="holding-avg-cost-currency"
-                  name="averageCostCurrency"
-                  defaultValue={holding?.averageCostCurrency ?? "THB"}
-                  className="w-20 rounded-md border border-foreground/20 bg-transparent px-2 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-                >
-                  {CURRENCIES.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+            {/* Average Cost — hidden for cash-like assets (submitted as 1 via hidden input) */}
+            {isCashLike ? (
+              <>
+                <input type="hidden" name="averageCost" value="1" />
+                <input type="hidden" name="averageCostCurrency" value="THB" />
+              </>
+            ) : (
+              <div>
+                <label htmlFor="holding-avg-cost" className="block text-sm font-medium">
+                  Average Cost <span className="font-normal text-foreground/50">(per unit)</span>
+                </label>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    id="holding-avg-cost"
+                    name="averageCost"
+                    type="number"
+                    inputMode="decimal"
+                    required
+                    min="0"
+                    step="any"
+                    defaultValue={holding?.averageCost ?? ""}
+                    placeholder="e.g. 120.50…"
+                    autoComplete="off"
+                    className="block flex-1 rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                  />
+                  <select
+                    id="holding-avg-cost-currency"
+                    name="averageCostCurrency"
+                    defaultValue={holding?.averageCostCurrency ?? "THB"}
+                    className="w-20 rounded-md border border-foreground/20 bg-transparent px-2 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                  >
+                    {CURRENCIES.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Current Price */}
-            <div>
-              <label htmlFor="holding-current-price" className="block text-sm font-medium">
-                Current Price <span className="font-normal text-foreground/50">(per unit)</span>
-              </label>
-              <div className="mt-1 flex gap-2">
-                <input
-                  id="holding-current-price"
-                  name="currentPrice"
-                  type="number"
-                  inputMode="decimal"
-                  required
-                  min="0"
-                  step="any"
-                  value={priceValue}
-                  onChange={(e) => setPriceValue(e.target.value)}
-                  placeholder="e.g. 135.00…"
-                  autoComplete="off"
-                  className="block flex-1 rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-                />
-                <select
-                  id="holding-current-price-currency"
-                  name="currentPriceCurrency"
-                  defaultValue={holding?.currentPriceCurrency ?? "THB"}
-                  className="w-20 rounded-md border border-foreground/20 bg-transparent px-2 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
-                >
-                  {CURRENCIES.map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+            {/* Current Price — hidden for cash-like assets (submitted as 1 via hidden input) */}
+            {isCashLike ? (
+              <>
+                <input type="hidden" name="currentPrice" value="1" />
+                <input type="hidden" name="currentPriceCurrency" value="THB" />
+              </>
+            ) : (
+              <div>
+                <label htmlFor="holding-current-price" className="block text-sm font-medium">
+                  Current Price <span className="font-normal text-foreground/50">(per unit)</span>
+                </label>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    id="holding-current-price"
+                    name="currentPrice"
+                    type="number"
+                    inputMode="decimal"
+                    required
+                    min="0"
+                    step="any"
+                    value={priceValue}
+                    onChange={(e) => setPriceValue(e.target.value)}
+                    placeholder="e.g. 135.00…"
+                    autoComplete="off"
+                    className="block flex-1 rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                  />
+                  <select
+                    id="holding-current-price-currency"
+                    name="currentPriceCurrency"
+                    defaultValue={holding?.currentPriceCurrency ?? "THB"}
+                    className="w-20 rounded-md border border-foreground/20 bg-transparent px-2 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                  >
+                    {CURRENCIES.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Company ID */}
             <div>

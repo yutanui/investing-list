@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { usePortfolioList } from "@/context/portfolio-list-context";
 import { useAllHoldings } from "@/context/holdings-context";
+import { useBucketSettings } from "@/context/bucket-settings-context";
 import { PortfolioSummary } from "@/components/portfolio-summary";
+import { BucketSummary } from "@/components/bucket-summary";
 import { PortfolioCard } from "@/components/portfolio-card";
 import { PortfolioDialog } from "@/components/portfolio-dialog";
-import { Portfolio } from "@/types/portfolio";
+import { Portfolio, ASSET_TYPE_BUCKET, BucketId, BucketSettings, DEFAULT_BUCKET_SETTINGS } from "@/types/portfolio";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { loadHoldings, saveHoldings } from "@/lib/storage";
+import { toTHB } from "@/lib/format";
 
 type SortKey = "name" | "amount" | "returns";
 type SortDirection = "asc" | "desc";
@@ -24,6 +27,8 @@ export default function HomePage() {
   const { portfolios, loading: portfoliosLoading, addPortfolio, updatePortfolio, removePortfolio } = usePortfolioList();
   const { allHoldings, loading: holdingsLoading, getPortfolioStats, reload: reloadAllHoldings } = useAllHoldings();
 
+  const { settings, updateSettings } = useBucketSettings();
+
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -31,6 +36,8 @@ export default function HomePage() {
   const [dialogKey, setDialogKey] = useState(0);
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [syncingPortfolioName, setSyncingPortfolioName] = useState<string | null>(null);
+  const [editingTargets, setEditingTargets] = useState(false);
+  const [targetInputs, setTargetInputs] = useState<BucketSettings>(DEFAULT_BUCKET_SETTINGS);
 
   async function syncNavPrices() {
     setSyncState("loading");
@@ -185,6 +192,24 @@ export default function HomePage() {
     portfolios.map((p) => [p.id, getPortfolioStats(p.id)]),
   );
 
+  const totalAllValue = allHoldings.reduce(
+    (sum, h) => sum + h.shares * toTHB(h.currentPrice, h.currentPriceCurrency),
+    0,
+  );
+
+  const bucketData = ([1, 2, 3] as BucketId[]).map((bucketId) => {
+    const actualValue = allHoldings
+      .filter((h) => ASSET_TYPE_BUCKET[h.assetType] === bucketId)
+      .reduce((sum, h) => sum + h.shares * toTHB(h.currentPrice, h.currentPriceCurrency), 0);
+    const actualPercent = totalAllValue > 0 ? actualValue / totalAllValue : 0;
+    const targetPercent = settings[`bucket${bucketId}Target` as keyof BucketSettings] / 100;
+    const delta = actualPercent - targetPercent;
+    return { bucketId, actualValue, actualPercent, targetPercent, delta };
+  });
+
+  const showTargets =
+    settings.bucket1Target > 0 || settings.bucket2Target > 0 || settings.bucket3Target > 0;
+
   const sortedPortfolios = [...portfolios].sort((a, b) => {
     const statsA = statsMap.get(a.id)!;
     const statsB = statsMap.get(b.id)!;
@@ -273,6 +298,88 @@ export default function HomePage() {
 
         <div className="mt-6">
           <PortfolioSummary holdings={allHoldings} />
+        </div>
+
+        {/* Bucket Strategy Summary */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-foreground/70">Bucket Strategy</h3>
+            {!editingTargets && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTargetInputs(settings);
+                  setEditingTargets(true);
+                }}
+                className="text-xs text-foreground/50 hover:text-foreground/80 underline underline-offset-2"
+              >
+                Edit targets
+              </button>
+            )}
+          </div>
+
+          {editingTargets && (
+            <form
+              className="mb-4 rounded-lg border border-foreground/15 px-4 py-3 space-y-3"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                await updateSettings(targetInputs);
+                setEditingTargets(false);
+              }}
+            >
+              <p className="text-xs font-medium text-foreground/60">Set target allocations (%)</p>
+              <div className="grid grid-cols-3 gap-3">
+                {([1, 2, 3] as BucketId[]).map((id) => (
+                  <div key={id}>
+                    <label className="text-xs text-foreground/50 mb-1 block">Bucket {id}</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={targetInputs[`bucket${id}Target` as keyof BucketSettings]}
+                      onChange={(e) =>
+                        setTargetInputs((prev) => ({
+                          ...prev,
+                          [`bucket${id}Target`]: Number(e.target.value),
+                        }))
+                      }
+                      className="w-full rounded-md border border-foreground/20 bg-background px-2 py-1.5 text-sm tabular-nums focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-between">
+                <span
+                  className={`text-xs ${
+                    targetInputs.bucket1Target + targetInputs.bucket2Target + targetInputs.bucket3Target === 100
+                      ? "text-foreground/50"
+                      : "text-loss"
+                  }`}
+                >
+                  Total: {targetInputs.bucket1Target + targetInputs.bucket2Target + targetInputs.bucket3Target}%
+                  {targetInputs.bucket1Target + targetInputs.bucket2Target + targetInputs.bucket3Target !== 100 &&
+                    " (should be 100%)"}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingTargets(false)}
+                    className="text-xs text-foreground/50 hover:text-foreground/80"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-md bg-foreground px-3 py-1.5 text-xs font-medium text-background hover:bg-foreground/90"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
+
+          <BucketSummary buckets={bucketData} showTargets={showTargets} />
         </div>
       </div>
 
