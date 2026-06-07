@@ -52,6 +52,7 @@ export interface Holding {
   companyId?: string;
   holdingId?: string;
   navDate?: string;
+  targetAllocation?: number | null; // desired % of total portfolio value (0–100), null = excluded
 }
 
 export type BucketId = 1 | 2 | 3;
@@ -82,4 +83,12 @@ export const DEFAULT_BUCKET_SETTINGS: BucketSettings = {
   bucket1Target: 0,
   bucket2Target: 0,
   bucket3Target: 0,
+};
+
+export interface RebalanceSettings {
+  driftThreshold: number; // percentage points, e.g. 5 means +/-5%
+}
+
+export const DEFAULT_REBALANCE_SETTINGS: RebalanceSettings = {
+  driftThreshold: 5,
 };
