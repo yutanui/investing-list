@@ -1,7 +1,7 @@
 ---
 name: code-fixer
 description: Fixes functional issues identified in test-results.md. Invoke after playwright-tester reports failures. Reads only relevant source files, fixes only reported failures.
-model: sonnet
+model: opus
 tools: Read, Write, Edit, Bash
 ---
 
