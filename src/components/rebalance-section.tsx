@@ -2,7 +2,7 @@
 
 import { Holding } from "@/types/portfolio";
 import { formatTHB, formatPercent, formatAllocation } from "@/lib/format";
-import { computeDrift, computeTransfers, DriftRow } from "@/lib/rebalance";
+import { computeDrift, computeTransfers, holdingValueTHB, DriftRow } from "@/lib/rebalance";
 import { useRebalanceSettings } from "@/context/rebalance-settings-context";
 
 interface RebalanceSectionProps {
@@ -46,6 +46,11 @@ export function RebalanceSection({ holdings, totalMarketValue }: RebalanceSectio
   if (!hasTargets) return null;
 
   const driftRows = computeDrift(holdings, totalMarketValue);
+
+  // Default sort for presentation: highest target allocation first.
+  // Stable sort preserves original order as a tiebreaker for equal targets.
+  const sortedRows = driftRows.slice().sort((a, b) => b.targetPct - a.targetPct);
+
   const transfers = computeTransfers(driftRows, driftThreshold);
 
   const outOfBalance = driftRows.filter(
@@ -63,7 +68,7 @@ export function RebalanceSection({ holdings, totalMarketValue }: RebalanceSectio
 
       {/* Mobile: card list */}
       <div className="mt-4 space-y-3 sm:hidden">
-        {driftRows.map((row) => {
+        {sortedRows.map((row) => {
           const status = statusFor(row, driftThreshold);
           return (
             <article
@@ -82,6 +87,14 @@ export function RebalanceSection({ holdings, totalMarketValue }: RebalanceSectio
 
                 <div className="text-foreground/60">Actual</div>
                 <div className="text-right">{formatAllocation(row.actualPct / 100)}</div>
+
+                <div className="text-foreground/60">Current Value</div>
+                <div className="text-right">{formatTHB(holdingValueTHB(row.holding))}</div>
+
+                <div className="text-foreground/60">Target Amount</div>
+                <div className="text-right">
+                  {formatTHB((row.targetPct / 100) * totalMarketValue)}
+                </div>
 
                 <div className="text-foreground/60">Drift</div>
                 <div className={`text-right ${driftColor(status)}`}>
@@ -106,13 +119,15 @@ export function RebalanceSection({ holdings, totalMarketValue }: RebalanceSectio
               <th scope="col" className="pb-3 pr-4 font-medium">Holding</th>
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Target</th>
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Actual</th>
+              <th scope="col" className="pb-3 pr-4 text-right font-medium">Current Value</th>
+              <th scope="col" className="pb-3 pr-4 text-right font-medium">Target Amount</th>
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Drift</th>
               <th scope="col" className="pb-3 pr-4 text-right font-medium">Drift Amount</th>
               <th scope="col" className="pb-3 font-medium">Status</th>
             </tr>
           </thead>
           <tbody className="tabular-nums">
-            {driftRows.map((row) => {
+            {sortedRows.map((row) => {
               const status = statusFor(row, driftThreshold);
               const color = driftColor(status);
               return (
@@ -128,6 +143,12 @@ export function RebalanceSection({ holdings, totalMarketValue }: RebalanceSectio
                   </td>
                   <td className="py-3 pr-4 text-right">
                     {formatAllocation(row.actualPct / 100)}
+                  </td>
+                  <td className="py-3 pr-4 text-right">
+                    {formatTHB(holdingValueTHB(row.holding))}
+                  </td>
+                  <td className="py-3 pr-4 text-right">
+                    {formatTHB((row.targetPct / 100) * totalMarketValue)}
                   </td>
                   <td className={`py-3 pr-4 text-right ${color}`}>
                     {formatPercent(row.driftPct / 100)}
