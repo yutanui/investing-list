@@ -10,6 +10,7 @@ type HoldingFormData = Omit<Holding, "portfolioId">;
 interface HoldingDialogProps {
   open: boolean;
   holding?: Holding | null;
+  allHoldings?: Holding[];
   onSave: (holding: HoldingFormData) => void;
   onDelete?: (id: string) => void;
   onClose: () => void;
@@ -27,6 +28,7 @@ function generateId(): string {
 export function HoldingDialog({
   open,
   holding,
+  allHoldings = [],
   onSave,
   onDelete,
   onClose,
@@ -41,6 +43,7 @@ export function HoldingDialog({
   const [navError, setNavError] = useState<string | null>(null);
   const [priceValue, setPriceValue] = useState<string>("");
   const [assetType, setAssetType] = useState<AssetType>(holding?.assetType ?? "stock");
+  const [targetAllocationValue, setTargetAllocationValue] = useState<string>("");
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -50,6 +53,11 @@ export function HoldingDialog({
       dialog.showModal();
       setPriceValue(holding?.currentPrice?.toString() ?? "");
       setAssetType(holding?.assetType ?? "stock");
+      setTargetAllocationValue(
+        holding?.targetAllocation === null || holding?.targetAllocation === undefined
+          ? ""
+          : String(holding.targetAllocation),
+      );
       requestAnimationFrame(() => firstInputRef.current?.focus());
     } else {
       dialog.close();
@@ -57,7 +65,7 @@ export function HoldingDialog({
       setNavError(null);
       setNavLoading(false);
     }
-  }, [open, holding?.currentPrice, holding?.assetType]);
+  }, [open, holding?.currentPrice, holding?.assetType, holding?.targetAllocation]);
 
   // Handle native dialog close (Escape key)
   useEffect(() => {
@@ -97,6 +105,10 @@ export function HoldingDialog({
       currentPriceCurrency: formData.get("currentPriceCurrency") as Currency,
       companyId: (formData.get("companyId") as string).trim() || undefined,
       holdingId: (formData.get("holdingId") as string).trim() || undefined,
+      targetAllocation:
+        (formData.get("targetAllocation") as string).trim() === ""
+          ? null
+          : Number(formData.get("targetAllocation")),
     };
 
     onSave(saved);
@@ -155,6 +167,21 @@ export function HoldingDialog({
   }
 
   const isCashLike = assetType === "cash" || assetType === "money_market_fund";
+
+  // Running total of target allocation across all holdings in the portfolio,
+  // excluding the currently-edited holding (its live value is added instead).
+  const otherHoldings = allHoldings.filter((h) => h.id !== holding?.id);
+  const otherAllocations = otherHoldings.filter(
+    (h) => h.targetAllocation !== null && h.targetAllocation !== undefined,
+  );
+  const otherTotal = otherAllocations.reduce(
+    (sum, h) => sum + (h.targetAllocation ?? 0),
+    0,
+  );
+  const currentTarget =
+    targetAllocationValue.trim() === "" ? null : Number(targetAllocationValue);
+  const totalAllocated = otherTotal + (currentTarget ?? 0);
+  const allocatedCount = otherAllocations.length + (currentTarget !== null ? 1 : 0);
 
   return (
     <dialog
@@ -256,6 +283,38 @@ export function HoldingDialog({
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Target Allocation */}
+            <div>
+              <label htmlFor="holding-target-allocation" className="block text-sm font-medium">
+                Target Allocation (%){" "}
+                <span className="font-normal text-foreground/50">(optional)</span>
+              </label>
+              <input
+                id="holding-target-allocation"
+                name="targetAllocation"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                max="100"
+                step="0.01"
+                value={targetAllocationValue}
+                onChange={(e) => setTargetAllocationValue(e.target.value)}
+                placeholder="e.g. 25"
+                autoComplete="off"
+                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+              />
+              <p
+                className={`mt-1 text-xs ${totalAllocated > 100 ? "text-loss" : "text-foreground/50"}`}
+              >
+                Total allocated: {totalAllocated.toFixed(2)}% across {allocatedCount}{" "}
+                {allocatedCount === 1 ? "holding" : "holdings"}
+                {totalAllocated > 100 ? " — exceeds 100%" : ""}
+              </p>
+              <p className="mt-1 text-xs text-foreground/40">
+                Leave blank to exclude this holding from rebalancing.
+              </p>
             </div>
 
             {/* Shares / Units — or Balance for cash-like assets */}

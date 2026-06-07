@@ -46,6 +46,7 @@ interface HoldingRow {
   company_id: string | null;
   holding_id: string | null;
   nav_date: string | null;
+  target_allocation: number | null;
 }
 
 function rowToHolding(row: HoldingRow): Holding {
@@ -65,6 +66,10 @@ function rowToHolding(row: HoldingRow): Holding {
     companyId: row.company_id ?? undefined,
     holdingId: row.holding_id ?? undefined,
     navDate: row.nav_date ?? undefined,
+    targetAllocation:
+      row.target_allocation === null || row.target_allocation === undefined
+        ? null
+        : Number(row.target_allocation),
   };
 }
 
@@ -132,6 +137,7 @@ export function PortfolioProvider({ portfolioId, children }: PortfolioProviderPr
             current_price_currency: holding.currentPriceCurrency,
             company_id: holding.companyId ?? null,
             holding_id: holding.holdingId ?? null,
+            target_allocation: holding.targetAllocation ?? null,
           })
           .select()
           .single();
@@ -168,6 +174,7 @@ export function PortfolioProvider({ portfolioId, children }: PortfolioProviderPr
         if (updates.companyId !== undefined) dbUpdates.company_id = updates.companyId ?? null;
         if (updates.holdingId !== undefined) dbUpdates.holding_id = updates.holdingId ?? null;
         if (updates.navDate !== undefined) dbUpdates.nav_date = updates.navDate ?? null;
+        if (updates.targetAllocation !== undefined) dbUpdates.target_allocation = updates.targetAllocation ?? null;
         dbUpdates.updated_at = new Date().toISOString();
 
         const { error } = await supabase

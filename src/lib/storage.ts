@@ -74,6 +74,10 @@ export function loadHoldings(): Holding[] {
       companyId: (h.companyId as string) ?? undefined,
       holdingId: (h.holdingId as string) ?? undefined,
       navDate: (h.navDate as string) ?? undefined,
+      targetAllocation:
+        h.targetAllocation === undefined || h.targetAllocation === null
+          ? null
+          : Number(h.targetAllocation),
     })) as Holding[];
 
     return holdings;

@@ -70,6 +70,17 @@ Exposes `user`, `loading`, `isRecoveryMode`, and these actions:
 
 `isRecoveryMode` is set to `true` when Supabase fires the `PASSWORD_RECOVERY` auth event (triggered by clicking the reset link in email). `Header` watches this and auto-opens `AuthDialog` in `reset_new_password` mode.
 
+### Rebalance settings context (`src/context/rebalance-settings-context.tsx`)
+
+Mounted in `AppShell` below `BucketSettingsProvider`. Exposes `rebalanceSettings` (`{ driftThreshold }`), `loading`, and `updateRebalanceSettings(partial)`. Logged in → reads/writes the `rebalance_settings` Supabase table (upsert on `user_id`); logged out → `DEFAULT_REBALANCE_SETTINGS` in-memory only (no localStorage for MVP).
+
+### Rebalancing logic (`src/lib/rebalance.ts`)
+
+Pure utility (no React) housing all drift math:
+- `holdingValueTHB(holding)` — `shares * toTHB(currentPrice, currency)`
+- `computeDrift(holdings, totalValueTHB)` → `DriftRow[]` — one row per holding with a non-null `targetAllocation`; percentages are plain 0–100 numbers (divide by 100 before passing to `formatPercent`/`formatAllocation`)
+- `computeTransfers(driftRows, driftThreshold)` → `TransferSuggestion[]` — filters rows outside the threshold, then greedy two-pointer match between overweight sources and underweight destinations
+
 ### Components
 
 All components are in `src/components/` — hand-written with inline Tailwind, no UI library.
@@ -82,8 +93,9 @@ All components are in `src/components/` — hand-written with inline Tailwind, n
 | `portfolio-nav.tsx` | Collapsible left sidebar with sortable portfolio list (retained but not rendered — was replaced by in-page cards grid on homepage) |
 | `portfolio-card.tsx` | Card used on the home page in the portfolios grid; shows portfolio name, holdings count, total value, cost, and gain/loss |
 | `portfolio-dialog.tsx` | Modal (`<dialog>`) for creating / editing / deleting a portfolio |
-| `holding-dialog.tsx` | Modal (`<dialog>`) for creating / editing / deleting a holding; includes all fields: name, ticker, asset type, holding type, shares, average cost + currency, current price + currency, company ID, holding ID |
+| `holding-dialog.tsx` | Modal (`<dialog>`) for creating / editing / deleting a holding; includes all fields: name, ticker, asset type, holding type, target allocation (%), shares, average cost + currency, current price + currency, company ID, holding ID; the target-allocation field shows a running "Total allocated: X% across N holdings" footer (takes optional `allHoldings` prop to compute it, excluding the edited holding) |
 | `portfolio-summary.tsx` | Stat cards grid: Market Value, Total Cost, Gain/Loss, Return %; plus a core/satellite breakdown row |
+| `rebalance-section.tsx` | Rebalancing block on the portfolio page (only rendered when ≥1 holding has a `targetAllocation`): drift table (desktop) / card list (mobile), inline ±drift-threshold input in the header, and a Suggested Transfers subsection driven by `src/lib/rebalance.ts` + `useRebalanceSettings` |
 
 Dialog pattern: all dialogs use the native `<dialog>` element (`showModal()` / `close()`), auto-focus the first input, close on Escape or backdrop click.
 
@@ -101,7 +113,7 @@ Custom Tailwind color aliases used throughout (defined in the global CSS / Tailw
 | Route | File | Description |
 |---|---|---|
 | `/` | `src/app/page.tsx` | Aggregated summary + sortable portfolio cards grid; editing uses `PortfolioDialog` inline; "Add Portfolio" button in `Header` also opens the dialog; includes "Sync NAV" button (syncs all mutual_fund holdings with a holdingId across all portfolios concurrently) |
-| `/portfolio/[id]` | `src/app/portfolio/[id]/page.tsx` | Per-portfolio holdings view; desktop table + mobile card list; mounts `PortfolioProvider`; includes "Update NAV" button |
+| `/portfolio/[id]` | `src/app/portfolio/[id]/page.tsx` | Per-portfolio holdings view; desktop table + mobile card list; mounts `PortfolioProvider`; includes "Update NAV" button; renders `RebalanceSection` below the summary when any holding has a `targetAllocation` |
 
 ### API Routes
 
@@ -112,8 +124,9 @@ Custom Tailwind color aliases used throughout (defined in the global CSS / Tailw
 ### Data model (`src/types/portfolio.ts`)
 
 - `Portfolio`: `{ id, name }`
-- `Holding`: belongs to one portfolio; has `assetType` (stock/etf/mutual_fund/bond/cash/money_market_fund/dividend_mutual_fund), `holdingType` (core/satellite), `shares`, `averageCost`/`currentPrice` each with a `Currency` (THB/USD), plus optional `ticker`, `companyId`, `holdingId`, `navDate` (last fetched NAV date string), and `updatedAt` (set by DB trigger)
+- `Holding`: belongs to one portfolio; has `assetType` (stock/etf/mutual_fund/bond/cash/money_market_fund/dividend_mutual_fund), `holdingType` (core/satellite), `shares`, `averageCost`/`currentPrice` each with a `Currency` (THB/USD), plus optional `ticker`, `companyId`, `holdingId`, `navDate` (last fetched NAV date string), `targetAllocation` (desired % of total portfolio value, 0–100, null = excluded from rebalancing), and `updatedAt` (set by DB trigger)
 - `BucketId`: `1 | 2 | 3` — bucket strategy identifiers; `ASSET_TYPE_BUCKET` maps every `AssetType` to a `BucketId`; `BucketSettings` / `DEFAULT_BUCKET_SETTINGS` hold per-user target allocations (Phase 2 will add a provider/persistence layer)
+- `RebalanceSettings` / `DEFAULT_REBALANCE_SETTINGS`: `{ driftThreshold }` (percentage points, default 5); persisted per-user via `rebalance_settings` table when logged in, in-memory only when logged out
 - Cash-like asset types (`cash`, `money_market_fund`): in `HoldingDialog` the "Shares / Units" label becomes "Balance (THB)" and Average Cost / Current Price fields are hidden — both are submitted as `1` via hidden inputs so `shares * 1 = THB balance`
 
 ### Currency and formatting (`src/lib/format.ts`)
@@ -137,6 +150,8 @@ SQL migrations are in `supabase/` (run manually via Supabase SQL Editor in order
 7. `007_add_nav_date.sql` — optional `nav_date` TEXT column on holdings
 8. `008_add_bucket_settings.sql` — `bucket_settings` table (user_id PK, bucket1–3 targets, RLS, updated_at trigger)
 9. `009_add_asset_types.sql` — drops and recreates `holdings_asset_type_check` to include `cash`, `money_market_fund`, `dividend_mutual_fund`
+10. `010_add_target_allocation.sql` — optional `target_allocation` NUMERIC(5,2) column on holdings
+11. `011_add_rebalance_settings.sql` — `rebalance_settings` table (user_id PK, drift_threshold, RLS, reuses `set_updated_at()` trigger)
 
 DB column naming is snake_case; TypeScript field naming is camelCase. Context files contain mapper functions (`rowToHolding`, `rowToPortfolio`) for conversion.
 

@@ -9,6 +9,7 @@ import { Holding, ASSET_TYPE_LABELS, HOLDING_TYPE_LABELS } from "@/types/portfol
 import { formatTHB, formatPercent, formatAllocation, formatDate, toTHB } from "@/lib/format";
 import { HoldingDialog } from "@/components/holding-dialog";
 import { PortfolioSummary } from "@/components/portfolio-summary";
+import { RebalanceSection } from "@/components/rebalance-section";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 interface PageProps {
@@ -186,6 +187,7 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
         key={dialogKey}
         open={dialogOpen}
         holding={editingHolding}
+        allHoldings={holdings}
         onSave={handleSave}
         onDelete={editingHolding ? handleDelete : undefined}
         onClose={handleClose}
@@ -299,6 +301,8 @@ function PortfolioHoldingsView({
       <div className="mt-6">
         <PortfolioSummary holdings={holdings} />
       </div>
+
+      <RebalanceSection holdings={holdings} totalMarketValue={totalMarketValue} />
 
       {/* Mobile: card layout */}
       <div className="mt-6 space-y-3 sm:hidden">
