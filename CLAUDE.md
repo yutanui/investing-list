@@ -95,7 +95,7 @@ All components are in `src/components/` — hand-written with inline Tailwind, n
 | `portfolio-dialog.tsx` | Modal (`<dialog>`) for creating / editing / deleting a portfolio |
 | `holding-dialog.tsx` | Modal (`<dialog>`) for creating / editing / deleting a holding; includes all fields: name, ticker, asset type, holding type, target allocation (%), shares, average cost + currency, current price + currency, company ID, holding ID; the target-allocation field shows a running "Total allocated: X% across N holdings" footer (takes optional `allHoldings` prop to compute it, excluding the edited holding) |
 | `portfolio-summary.tsx` | Stat cards grid: Market Value, Total Cost, Gain/Loss, Return %; plus a core/satellite breakdown row |
-| `rebalance-section.tsx` | Rebalancing block on the portfolio page (only rendered when ≥1 holding has a `targetAllocation`): drift table (desktop) / card list (mobile), inline ±drift-threshold input in the header, and a Suggested Transfers subsection driven by `src/lib/rebalance.ts` + `useRebalanceSettings` |
+| `rebalance-section.tsx` | Rebalancing block on the portfolio page (only rendered when ≥1 holding has a `targetAllocation`): drift table (desktop) / card list (mobile), inline ±drift-threshold input in the header, and a Suggested Transfers subsection driven by `src/lib/rebalance.ts` + `useRebalanceSettings`. Rows are sorted by `targetPct` descending for display (slice+sort inside the component, not in `computeDrift`). Drift table includes "Current Value" (`holdingValueTHB(row.holding)`) and "Target Amount" (`(row.targetPct / 100) * totalMarketValue`) columns after "Actual" and before "Drift", in both desktop table and mobile cards |
 
 Dialog pattern: all dialogs use the native `<dialog>` element (`showModal()` / `close()`), auto-focus the first input, close on Escape or backdrop click.
 
@@ -113,7 +113,7 @@ Custom Tailwind color aliases used throughout (defined in the global CSS / Tailw
 | Route | File | Description |
 |---|---|---|
 | `/` | `src/app/page.tsx` | Aggregated summary + sortable portfolio cards grid; editing uses `PortfolioDialog` inline; "Add Portfolio" button in `Header` also opens the dialog; includes "Sync NAV" button (syncs all mutual_fund holdings with a holdingId across all portfolios concurrently) |
-| `/portfolio/[id]` | `src/app/portfolio/[id]/page.tsx` | Per-portfolio holdings view; desktop table + mobile card list; mounts `PortfolioProvider`; includes "Update NAV" button; renders `RebalanceSection` below the summary when any holding has a `targetAllocation` |
+| `/portfolio/[id]` | `src/app/portfolio/[id]/page.tsx` | Per-portfolio holdings view; desktop table + mobile card list; mounts `PortfolioProvider`; "Update NAV" + "Add Holding" buttons always visible. When any holding has a `targetAllocation`, a "Holdings" / "Rebalancing" tab bar (ARIA `role="tablist"`, local React state, default "Holdings", no URL/context) renders below `PortfolioSummary` and gates the holdings list vs. `RebalanceSection`. With no targets there is no tab bar — holdings render directly |
 
 ### API Routes
 

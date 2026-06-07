@@ -233,6 +233,16 @@ function PortfolioHoldingsView({
     return max === undefined || h.updatedAt > max ? h.updatedAt : max;
   }, undefined);
 
+  const hasTargets = holdings.some(
+    (h) => h.targetAllocation !== null && h.targetAllocation !== undefined,
+  );
+
+  const [activeTab, setActiveTab] = useState<"holdings" | "rebalancing">("holdings");
+
+  // When no holding has a target, there is no rebalancing tab — always show holdings.
+  const showHoldings = !hasTargets || activeTab === "holdings";
+  const showRebalancing = hasTargets && activeTab === "rebalancing";
+
   return (
     <section aria-label="Portfolio holdings">
       <div className="flex items-center justify-between">
@@ -302,18 +312,69 @@ function PortfolioHoldingsView({
         <PortfolioSummary holdings={holdings} />
       </div>
 
-      <RebalanceSection holdings={holdings} totalMarketValue={totalMarketValue} />
+      {hasTargets && (
+        <div
+          role="tablist"
+          aria-label="Portfolio view"
+          className="mt-8 flex gap-1 border-b border-foreground/10"
+        >
+          <button
+            type="button"
+            role="tab"
+            id="tab-holdings"
+            aria-selected={activeTab === "holdings"}
+            aria-controls="panel-holdings"
+            tabIndex={activeTab === "holdings" ? 0 : -1}
+            onClick={() => setActiveTab("holdings")}
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none ${
+              activeTab === "holdings"
+                ? "border-foreground text-foreground"
+                : "border-transparent text-foreground/60 hover:text-foreground/80"
+            }`}
+          >
+            Holdings
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="tab-rebalancing"
+            aria-selected={activeTab === "rebalancing"}
+            aria-controls="panel-rebalancing"
+            tabIndex={activeTab === "rebalancing" ? 0 : -1}
+            onClick={() => setActiveTab("rebalancing")}
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none ${
+              activeTab === "rebalancing"
+                ? "border-foreground text-foreground"
+                : "border-transparent text-foreground/60 hover:text-foreground/80"
+            }`}
+          >
+            Rebalancing
+          </button>
+        </div>
+      )}
 
-      {/* Mobile: card layout */}
-      <div className="mt-6 space-y-3 sm:hidden">
-        {holdings.map((h) => (
-          <HoldingCard key={h.id} holding={h} totalMarketValue={totalMarketValue} onEdit={onEdit} />
-        ))}
-      </div>
+      {showRebalancing && (
+        <div role="tabpanel" id="panel-rebalancing" aria-labelledby="tab-rebalancing">
+          <RebalanceSection holdings={holdings} totalMarketValue={totalMarketValue} />
+        </div>
+      )}
 
-      {/* Desktop: table layout */}
-      <div className="mt-6 hidden overflow-x-auto sm:block">
-        <table className="w-full text-left text-sm">
+      {showHoldings && (
+        <div
+          role={hasTargets ? "tabpanel" : undefined}
+          id={hasTargets ? "panel-holdings" : undefined}
+          aria-labelledby={hasTargets ? "tab-holdings" : undefined}
+        >
+          {/* Mobile: card layout */}
+          <div className="mt-6 space-y-3 sm:hidden">
+            {holdings.map((h) => (
+              <HoldingCard key={h.id} holding={h} totalMarketValue={totalMarketValue} onEdit={onEdit} />
+            ))}
+          </div>
+
+          {/* Desktop: table layout */}
+          <div className="mt-6 hidden overflow-x-auto sm:block">
+            <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-foreground/10 text-xs uppercase tracking-wide text-foreground/60">
               <th scope="col" className="pb-3 pr-4 font-medium">Name</th>
@@ -396,8 +457,10 @@ function PortfolioHoldingsView({
               );
             })}
           </tbody>
-        </table>
-      </div>
+            </table>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
