@@ -1,7 +1,7 @@
 ---
 name: react-generator
 description: Generates React/Next.js App Router components, pages, Server Actions, and API routes. Invoke when implementing a new feature, component, page, or backend logic.
-model: sonnet
+model: opus
 tools: Read, Write, Edit, Bash
 ---
 
