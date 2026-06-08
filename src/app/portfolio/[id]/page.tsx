@@ -6,7 +6,8 @@ import { PortfolioProvider, usePortfolio } from "@/context/portfolio-context";
 import { usePortfolioList } from "@/context/portfolio-list-context";
 import { useAllHoldings } from "@/context/holdings-context";
 import { Holding, ASSET_TYPE_LABELS, HOLDING_TYPE_LABELS } from "@/types/portfolio";
-import { formatTHB, formatPercent, formatAllocation, formatDate, toTHB } from "@/lib/format";
+import { formatTHB, formatPercent, formatAllocation, formatDate, toTHB, maskTHB } from "@/lib/format";
+import { usePrivacyMode } from "@/context/privacy-context";
 import { HoldingDialog } from "@/components/holding-dialog";
 import { PortfolioSummary } from "@/components/portfolio-summary";
 import { RebalanceSection } from "@/components/rebalance-section";
@@ -222,6 +223,7 @@ function PortfolioHoldingsView({
   navLoading: boolean;
   navError: string | null;
 }) {
+  const { privacyMode } = usePrivacyMode();
   // Calculate total market value for allocation % (all converted to THB)
   const totalMarketValue = holdings.reduce(
     (sum, h) => sum + h.shares * toTHB(h.currentPrice, h.currentPriceCurrency),
@@ -431,17 +433,17 @@ function PortfolioHoldingsView({
                     {HOLDING_TYPE_LABELS[h.holdingType ?? "core"]}
                   </td>
                   <td className="py-3 pr-4 text-right">{h.shares}</td>
-                  <td className="py-3 pr-4 text-right">{formatTHB(avgCostTHB)}</td>
-                  <td className="py-3 pr-4 text-right">{formatTHB(currentPriceTHB)}</td>
+                  <td className="py-3 pr-4 text-right">{maskTHB(formatTHB(avgCostTHB), privacyMode)}</td>
+                  <td className="py-3 pr-4 text-right">{maskTHB(formatTHB(currentPriceTHB), privacyMode)}</td>
                   <td className={`py-3 pr-4 text-right ${h.holdingId && isNavStale(h) ? "text-loss" : "text-foreground/60"}`}>
                     {h.navDate ?? "—"}
                   </td>
                   <td className="py-3 pr-4 text-right">
-                    <div className="font-medium">{formatTHB(marketValue)}</div>
+                    <div className="font-medium">{maskTHB(formatTHB(marketValue), privacyMode)}</div>
                     <div className="text-xs text-foreground/65">{formatAllocation(allocation)}</div>
                   </td>
                   <td className={`py-3 pr-4 text-right ${gainLossColor}`}>
-                    {formatTHB(gainLoss)}
+                    {maskTHB(formatTHB(gainLoss), privacyMode)}
                   </td>
                   <td className={`py-3 pr-4 text-right ${gainLossColor}`}>
                     {formatPercent(gainLossPercent)}
@@ -474,6 +476,7 @@ function HoldingCard({
   totalMarketValue: number;
   onEdit: (holding: Holding) => void;
 }) {
+  const { privacyMode } = usePrivacyMode();
   // Convert to THB for consistent display
   const avgCostTHB = toTHB(holding.averageCost, holding.averageCostCurrency);
   const currentPriceTHB = toTHB(holding.currentPrice, holding.currentPriceCurrency);
@@ -519,20 +522,20 @@ function HoldingCard({
         <div className="text-right">{holding.shares}</div>
 
         <div className="text-foreground/60">Avg Cost</div>
-        <div className="text-right">{formatTHB(avgCostTHB)}</div>
+        <div className="text-right">{maskTHB(formatTHB(avgCostTHB), privacyMode)}</div>
 
         <div className="text-foreground/60">Current Price</div>
-        <div className="text-right">{formatTHB(currentPriceTHB)}</div>
+        <div className="text-right">{maskTHB(formatTHB(currentPriceTHB), privacyMode)}</div>
 
         <div className="text-foreground/60 font-medium">Market Value</div>
-        <div className="text-right font-medium">{formatTHB(marketValue)}</div>
+        <div className="text-right font-medium">{maskTHB(formatTHB(marketValue), privacyMode)}</div>
 
         <div className="text-foreground/60">Allocation</div>
         <div className="text-right">{formatAllocation(allocation)}</div>
 
         <div className="text-foreground/60">Gain/Loss</div>
         <div className={`text-right ${gainLossColor}`}>
-          {formatTHB(gainLoss)} ({formatPercent(gainLossPercent)})
+          {maskTHB(formatTHB(gainLoss), privacyMode)} ({formatPercent(gainLossPercent)})
         </div>
 
         {(holding.navDate || holding.holdingId) && (

@@ -1,9 +1,10 @@
 "use client";
 
 import { Holding } from "@/types/portfolio";
-import { formatTHB, formatPercent, formatAllocation } from "@/lib/format";
+import { formatTHB, formatPercent, formatAllocation, maskTHB } from "@/lib/format";
 import { computeDrift, computeTransfers, holdingValueTHB, DriftRow } from "@/lib/rebalance";
 import { useRebalanceSettings } from "@/context/rebalance-settings-context";
+import { usePrivacyMode } from "@/context/privacy-context";
 
 interface RebalanceSectionProps {
   holdings: Holding[];
@@ -37,6 +38,7 @@ function driftColor(status: string): string {
 export function RebalanceSection({ holdings, totalMarketValue }: RebalanceSectionProps) {
   const { rebalanceSettings } = useRebalanceSettings();
   const { driftThreshold } = rebalanceSettings;
+  const { privacyMode } = usePrivacyMode();
 
   const hasTargets = holdings.some(
     (h) => h.targetAllocation !== null && h.targetAllocation !== undefined,
@@ -89,11 +91,11 @@ export function RebalanceSection({ holdings, totalMarketValue }: RebalanceSectio
                 <div className="text-right">{formatAllocation(row.actualPct / 100)}</div>
 
                 <div className="text-foreground/60">Current Value</div>
-                <div className="text-right">{formatTHB(holdingValueTHB(row.holding))}</div>
+                <div className="text-right">{maskTHB(formatTHB(holdingValueTHB(row.holding)), privacyMode)}</div>
 
                 <div className="text-foreground/60">Target Amount</div>
                 <div className="text-right">
-                  {formatTHB((row.targetPct / 100) * totalMarketValue)}
+                  {maskTHB(formatTHB((row.targetPct / 100) * totalMarketValue), privacyMode)}
                 </div>
 
                 <div className="text-foreground/60">Drift</div>
@@ -103,7 +105,7 @@ export function RebalanceSection({ holdings, totalMarketValue }: RebalanceSectio
 
                 <div className="text-foreground/60">Drift Amount</div>
                 <div className={`text-right ${driftColor(status)}`}>
-                  {formatTHB(row.driftAmountTHB)}
+                  {maskTHB(formatTHB(row.driftAmountTHB), privacyMode)}
                 </div>
               </div>
             </article>
@@ -145,16 +147,16 @@ export function RebalanceSection({ holdings, totalMarketValue }: RebalanceSectio
                     {formatAllocation(row.actualPct / 100)}
                   </td>
                   <td className="py-3 pr-4 text-right">
-                    {formatTHB(holdingValueTHB(row.holding))}
+                    {maskTHB(formatTHB(holdingValueTHB(row.holding)), privacyMode)}
                   </td>
                   <td className="py-3 pr-4 text-right">
-                    {formatTHB((row.targetPct / 100) * totalMarketValue)}
+                    {maskTHB(formatTHB((row.targetPct / 100) * totalMarketValue), privacyMode)}
                   </td>
                   <td className={`py-3 pr-4 text-right ${color}`}>
                     {formatPercent(row.driftPct / 100)}
                   </td>
                   <td className={`py-3 pr-4 text-right ${color}`}>
-                    {formatTHB(row.driftAmountTHB)}
+                    {maskTHB(formatTHB(row.driftAmountTHB), privacyMode)}
                   </td>
                   <td className={`py-3 font-medium ${color}`}>{STATUS_LABELS[status]}</td>
                 </tr>
@@ -177,7 +179,7 @@ export function RebalanceSection({ holdings, totalMarketValue }: RebalanceSectio
           <div className="mt-2 space-y-2">
             {transfers.map((t, i) => (
               <p key={i} className="text-sm">
-                Move <span className="font-medium">{formatTHB(t.amountTHB)}</span> from{" "}
+                Move <span className="font-medium">{maskTHB(formatTHB(t.amountTHB), privacyMode)}</span> from{" "}
                 <span className="font-medium">{t.fromHolding.name}</span> to{" "}
                 <span className="font-medium">{t.toHolding.name}</span>
               </p>

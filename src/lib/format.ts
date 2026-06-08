@@ -60,3 +60,10 @@ export function formatDate(date: Date): string {
 export function toTHB(amount: number, currency: Currency): number {
   return currency === "USD" ? amount * USD_TO_THB_RATE : amount;
 }
+
+/**
+ * Mask a THB display string when privacy mode is enabled.
+ */
+export function maskTHB(value: string, privacyMode: boolean): string {
+  return privacyMode ? "••••••" : value;
+}
