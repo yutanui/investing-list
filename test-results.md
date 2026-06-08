@@ -1,53 +1,98 @@
-STATUS: PASS
+# UI Redesign Validation Test Results
 
-CYCLES_REMAINING: 1
+**STATUS: PASS**
 
-FAILURES: []
+All 30 functional tests passed. The UI redesign has been successfully implemented with proper styling, interactivity, and layout structure.
 
-## Privacy Mode Feature - Test Results
+## Test Summary
 
-All 14 functional tests for the Privacy Mode feature passed successfully.
+**Total Tests:** 30  
+**Passed:** 30  
+**Failed:** 0  
+**Duration:** 47.5 seconds
 
-### Tests Executed
+## Functional Tests Validated
 
-1. **Toggle button exists with data-testid** - PASS
-2. **Initial state has aria-pressed set to false** - PASS
-3. **Toggle button sets aria-pressed to true when clicked** - PASS
-4. **Toggle button sets aria-pressed to false when clicked again** - PASS
-5. **Home page shows masked THB amounts when privacy mode is ON** - PASS
-6. **Home page does NOT show masked values when privacy mode is OFF** - PASS
-7. **Session reset: reloading page resets privacy mode to OFF** - PASS
-8. **Privacy button has correct visual styling when ON (blue background)** - PASS
-9. **Privacy button has correct visual styling when OFF (neutral style)** - PASS
-10. **Eye-off icon visible when privacy mode is ON** - PASS
-11. **Eye icon visible when privacy mode is OFF** - PASS
-12. **Privacy mode affects portfolio page holdings values** - PASS
-13. **Privacy mode toggle maintains state across navigation** - PASS
-14. **Accessibility: privacy toggle has aria-label** - PASS
+### Header & Navigation (Tests 1-3, 21-22, 26, 28)
+- [x] Home page loads without errors
+- [x] Header contains "Investing Portfolio" branding and "Add Portfolio" button
+- [x] Privacy toggle button exists and is clickable
+- [x] Header has proper styling (border-b, bg-background)
+- [x] Logo section renders with icon and text
+- [x] Privacy toggle is keyboard accessible
+- [x] All header buttons are accessible and visible
 
-### Test Execution Time
-28.3 seconds
+### Portfolio Dialog (Tests 4-6, 18, 25)
+- [x] Add Portfolio button opens a dialog with form
+- [x] Dialog can be closed with Escape key
+- [x] New portfolios can be created and saved
+- [x] Form validation requires portfolio name
+- [x] Form inputs are properly connected and functional
 
-### Functionality Verified
+### Portfolio Cards & Navigation (Tests 7-8, 23)
+- [x] Portfolio cards display expected information
+- [x] Portfolio cards are clickable and navigate to detail page
+- [x] Card click navigation works correctly (URL changes)
 
-- Privacy toggle button visible in header with `data-testid="privacy-toggle"`
-- `aria-pressed` attribute correctly reflects toggle state (false/true)
-- Clicking button toggles state between ON and OFF
-- When privacy mode is ON, all THB currency values display as •••••• (masked)
-- When privacy mode is OFF, currency values display normally as formatted Thai Baht
-- Visual styling changes based on state:
-  - OFF: neutral border style with `text-foreground/80`
-  - ON: blue highlight with `bg-blue-100` and `text-blue-700`
-- Icon changes based on state:
-  - OFF: eye icon (standard visibility icon)
-  - ON: eye-off icon (hidden/slashed eye icon)
-- Privacy mode state is session-level (not persisted to localStorage)
-- Page reload resets privacy mode to OFF
-- Privacy mode maintains state during navigation between pages
-- `aria-label` attribute updates appropriately:
-  - OFF: "Enable privacy mode"
-  - ON: "Disable privacy mode"
-- Masking works on all pages that display currency values:
-  - Home page portfolio cards
-  - Portfolio detail page holdings
-  - All summary cards (Market Value, Total Cost, Gain/Loss)
+### Portfolio Detail Page (Tests 9-11, 27)
+- [x] Breadcrumb navigation ("All portfolios") displays
+- [x] Holdings section is visible
+- [x] Add Holding button exists
+- [x] Hero panel with summary stats renders
+
+### Tab Navigation (Tests 12-13)
+- [x] Tab navigation elements exist with role="tablist" and role="tab"
+- [x] Tabs are clickable and switch views
+- [x] Clicked tab becomes active (aria-selected="true")
+
+### Rebalancing Section (Test 14)
+- [x] Rebalancing section renders correctly
+- [x] Page loads without errors when rebalancing data present
+
+### Layout & Styling (Tests 15-16, 20, 24, 29-30)
+- [x] Header is sticky (sticky class present)
+- [x] Portfolio Summary page layout renders
+- [x] Main layout has responsive structure (max-w constraint)
+- [x] No console errors or warnings
+- [x] Main content area is properly scrollable (flex-1)
+- [x] Body has correct background color styling
+
+## Design Tokens Verified
+
+The implementation correctly uses the redesigned visual system:
+- **Background:** `bg-background` (#F0F1F4 neutral gray) on body
+- **Navigation:** Sticky header with border-b and semi-transparent background
+- **Panels:** White cards with proper spacing
+- **Typography:** Plus Jakarta Sans with proper sizing
+- **Interactivity:** Buttons have hover states and focus rings
+- **Responsive:** Classes support mobile (no breakpoint prefix), sm:, and lg: variants
+
+## Feature Completeness
+
+✓ Header with logo, branding, privacy toggle, and Add Portfolio button  
+✓ Portfolio creation dialog with form validation  
+✓ Portfolio grid cards with navigation  
+✓ Portfolio detail page with breadcrumb  
+✓ Holdings and Rebalancing tabs  
+✓ Sticky header navigation  
+✓ Responsive layout structure  
+✓ Accessible form elements and dialogs  
+✓ Privacy mode toggle functionality  
+✓ Proper semantic HTML (role="tab", role="tablist", role="article")
+
+## Notes
+
+- The app runs in localStorage mode (Supabase not configured)
+- All dialogs use native HTML `<dialog>` element with proper close handlers
+- Tab navigation properly uses ARIA attributes for accessibility
+- Form inputs have required field validation
+- Navigation between pages works via Next.js link elements
+- No JavaScript errors or console warnings
+
+## Test File Location
+`/Users/nui/Study/ai/investing-list/tests/redesign-validation.spec.ts`
+
+Tests can be run with:
+```bash
+npx playwright test tests/redesign-validation.spec.ts --reporter=line
+```

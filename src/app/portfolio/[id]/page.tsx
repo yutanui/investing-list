@@ -247,35 +247,32 @@ function PortfolioHoldingsView({
 
   return (
     <section aria-label="Portfolio holdings">
-      <div className="flex items-center justify-between">
+      {/* Breadcrumb */}
+      <Link
+        href="/"
+        className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-muted hover:text-ink transition-colors"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M19 12H5m7-7-7 7 7 7"/>
+        </svg>
+        All portfolios
+      </Link>
+
+      {/* Page header */}
+      <div className="mt-4 flex items-end justify-between gap-5">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">
-            {portfolioName}
-          </h2>
-          <p className="mt-1 text-sm text-foreground/60">
-            {holdings.length} {holdings.length === 1 ? "holding" : "holdings"}
+          <h1 className="text-[30px] font-extrabold tracking-[-0.02em] text-ink">{portfolioName}</h1>
+          <p className="mt-1 text-sm font-medium text-muted">
+            <span className="font-bold text-ink">{holdings.length} {holdings.length === 1 ? "holding" : "holdings"}</span>
+            {lastUpdatedAt && <span> · Updated {formatDate(lastUpdatedAt)}</span>}
           </p>
-          {lastUpdatedAt && (
-            <p className="mt-0.5 text-xs text-foreground/40">
-              Updated {formatDate(lastUpdatedAt)}
-            </p>
-          )}
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-            </svg>
-            Back
-          </Link>
+        <div className="flex shrink-0 items-center gap-2.5">
           <button
             type="button"
             onClick={onUpdateNav}
             disabled={navLoading}
-            className="inline-flex items-center gap-1.5 rounded-md border border-foreground/20 px-3 py-2 text-sm font-medium text-foreground/80 hover:border-foreground/40 hover:bg-foreground/[0.04] focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-2 rounded-[11px] border border-line2 bg-panel px-4 text-[14px] font-semibold text-muted hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {navLoading ? (
               <>
@@ -286,8 +283,11 @@ function PortfolioHoldingsView({
               </>
             ) : (
               <>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                  <path d="M21 3v5h-5"/>
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                  <path d="M8 16H3v5"/>
                 </svg>
                 Update NAV
               </>
@@ -296,10 +296,10 @@ function PortfolioHoldingsView({
           <button
             type="button"
             onClick={onAdd}
-            className="inline-flex items-center gap-1.5 rounded-md bg-foreground px-3 py-2 text-sm font-medium text-background hover:bg-foreground/90 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            className="inline-flex h-10 items-center gap-2 rounded-[11px] bg-accent px-4 text-[14px] font-semibold text-white hover:brightness-110 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 12h14M12 5v14"/>
             </svg>
             Add Holding
           </button>
@@ -310,15 +310,17 @@ function PortfolioHoldingsView({
         <p className="mt-3 text-sm text-loss">{navError}</p>
       )}
 
-      <div className="mt-6">
+      {/* Hero panel */}
+      <div className="mt-[22px]">
         <PortfolioSummary holdings={holdings} />
       </div>
 
+      {/* Tabs (only when any holding has a target) */}
       {hasTargets && (
         <div
           role="tablist"
           aria-label="Portfolio view"
-          className="mt-8 flex gap-1 border-b border-foreground/10"
+          className="mt-10 flex gap-7 border-b border-line"
         >
           <button
             type="button"
@@ -328,13 +330,14 @@ function PortfolioHoldingsView({
             aria-controls="panel-holdings"
             tabIndex={activeTab === "holdings" ? 0 : -1}
             onClick={() => setActiveTab("holdings")}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none ${
-              activeTab === "holdings"
-                ? "border-foreground text-foreground"
-                : "border-transparent text-foreground/60 hover:text-foreground/80"
+            className={`relative pb-3.5 text-[15px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 ${
+              activeTab === "holdings" ? "text-ink" : "text-muted hover:text-ink"
             }`}
           >
             Holdings
+            {activeTab === "holdings" && (
+              <span className="absolute bottom-[-1px] left-0 right-0 h-[2.5px] rounded-full bg-accent" />
+            )}
           </button>
           <button
             type="button"
@@ -344,13 +347,14 @@ function PortfolioHoldingsView({
             aria-controls="panel-rebalancing"
             tabIndex={activeTab === "rebalancing" ? 0 : -1}
             onClick={() => setActiveTab("rebalancing")}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none ${
-              activeTab === "rebalancing"
-                ? "border-foreground text-foreground"
-                : "border-transparent text-foreground/60 hover:text-foreground/80"
+            className={`relative pb-3.5 text-[15px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 ${
+              activeTab === "rebalancing" ? "text-ink" : "text-muted hover:text-ink"
             }`}
           >
             Rebalancing
+            {activeTab === "rebalancing" && (
+              <span className="absolute bottom-[-1px] left-0 right-0 h-[2.5px] rounded-full bg-accent" />
+            )}
           </button>
         </div>
       )}
@@ -374,92 +378,108 @@ function PortfolioHoldingsView({
             ))}
           </div>
 
-          {/* Desktop: table layout */}
-          <div className="mt-6 hidden overflow-x-auto sm:block">
-            <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-foreground/10 text-xs uppercase tracking-wide text-foreground/60">
-              <th scope="col" className="pb-3 pr-4 font-medium">Name</th>
-              <th scope="col" className="pb-3 pr-4 font-medium">Asset Type</th>
-              <th scope="col" className="pb-3 pr-4 font-medium">Type</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Shares</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Avg Cost</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Price</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">NAV Date</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Value</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">Gain/Loss</th>
-              <th scope="col" className="pb-3 pr-4 text-right font-medium">%</th>
-              <th scope="col" className="pb-3 font-medium"><span className="sr-only">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody className="tabular-nums">
-            {holdings.map((h) => {
-              // Convert to THB for consistent display
-              const avgCostTHB = toTHB(h.averageCost, h.averageCostCurrency);
-              const currentPriceTHB = toTHB(h.currentPrice, h.currentPriceCurrency);
-              const marketValue = h.shares * currentPriceTHB;
-              const totalCost = h.shares * avgCostTHB;
-              const gainLoss = marketValue - totalCost;
-              const gainLossPercent = totalCost > 0 ? gainLoss / totalCost : 0;
-              const allocation = totalMarketValue > 0 ? marketValue / totalMarketValue : 0;
-              const gainLossColor = gainLoss > 0 ? "text-gain" : gainLoss < 0 ? "text-loss" : "";
+          {/* Desktop: table in white card */}
+          <div className="mt-6 hidden overflow-hidden rounded-[18px] border border-line bg-panel sm:block"
+            style={{ boxShadow: "0 1px 2px rgba(20,20,30,.02)" }}
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-line">
+                    <th scope="col" className="py-[18px] pl-6 pr-3 text-left text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">Name</th>
+                    <th scope="col" className="py-[18px] px-3 text-left text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">Asset Type</th>
+                    <th scope="col" className="py-[18px] px-3 text-left text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">Type</th>
+                    <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">Shares</th>
+                    <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">Avg Cost</th>
+                    <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">Price</th>
+                    <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">NAV Date</th>
+                    <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">Value</th>
+                    <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">Gain / Loss</th>
+                    <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">%</th>
+                    <th scope="col" className="py-[18px] pl-3 pr-[18px] text-[11px] font-bold uppercase tracking-[0.05em] text-faint"><span className="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody className="tabular-nums">
+                  {holdings.map((h) => {
+                    const avgCostTHB = toTHB(h.averageCost, h.averageCostCurrency);
+                    const currentPriceTHB = toTHB(h.currentPrice, h.currentPriceCurrency);
+                    const marketValue = h.shares * currentPriceTHB;
+                    const totalCost = h.shares * avgCostTHB;
+                    const gainLoss = marketValue - totalCost;
+                    const gainLossPercent = totalCost > 0 ? gainLoss / totalCost : 0;
+                    const allocation = totalMarketValue > 0 ? marketValue / totalMarketValue : 0;
+                    const isGainPos = gainLoss > 0;
+                    const isGainNeg = gainLoss < 0;
 
-              return (
-                <tr
-                  key={h.id}
-                  onClick={() => onEdit(h)}
-                  className="cursor-pointer border-b border-foreground/5 transition-colors hover:bg-foreground/[0.04]"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      onEdit(h);
-                    }
-                  }}
-                >
-                  <td className="py-3 pr-4">
-                    <div className="font-medium">{h.name}</div>
-                    {h.ticker && (
-                      <div className="text-xs text-foreground/50">{h.ticker}</div>
-                    )}
-                    {h.updatedAt && (
-                      <div className="text-xs text-foreground/35">{formatDate(h.updatedAt)}</div>
-                    )}
-                  </td>
-                  <td className="py-3 pr-4 text-foreground/65">
-                    {ASSET_TYPE_LABELS[h.assetType]}
-                  </td>
-                  <td className="py-3 pr-4 text-foreground/65">
-                    {HOLDING_TYPE_LABELS[h.holdingType ?? "core"]}
-                  </td>
-                  <td className="py-3 pr-4 text-right">{h.shares}</td>
-                  <td className="py-3 pr-4 text-right">{maskTHB(formatTHB(avgCostTHB), privacyMode)}</td>
-                  <td className="py-3 pr-4 text-right">{maskTHB(formatTHB(currentPriceTHB), privacyMode)}</td>
-                  <td className={`py-3 pr-4 text-right ${h.holdingId && isNavStale(h) ? "text-loss" : "text-foreground/60"}`}>
-                    {h.navDate ?? "—"}
-                  </td>
-                  <td className="py-3 pr-4 text-right">
-                    <div className="font-medium">{maskTHB(formatTHB(marketValue), privacyMode)}</div>
-                    <div className="text-xs text-foreground/65">{formatAllocation(allocation)}</div>
-                  </td>
-                  <td className={`py-3 pr-4 text-right ${gainLossColor}`}>
-                    {maskTHB(formatTHB(gainLoss), privacyMode)}
-                  </td>
-                  <td className={`py-3 pr-4 text-right ${gainLossColor}`}>
-                    {formatPercent(gainLossPercent)}
-                  </td>
-                  <td className="py-3">
-                    <div className="rounded-md p-1.5 text-foreground/40">
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                      </svg>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-            </table>
+                    return (
+                      <tr
+                        key={h.id}
+                        className="border-b border-line last:border-0 transition-colors hover:bg-[#FAFAFB]"
+                      >
+                        <td className="py-4 pl-6 pr-3">
+                          <div className="text-[15px] font-bold tracking-[-0.01em] text-ink">{h.name}</div>
+                          {h.updatedAt && (
+                            <div className="mt-0.5 text-[12px] font-medium text-faint">{formatDate(h.updatedAt)}</div>
+                          )}
+                        </td>
+                        <td className="py-4 px-3 text-[14px] font-medium text-muted whitespace-nowrap">
+                          {ASSET_TYPE_LABELS[h.assetType]}
+                        </td>
+                        <td className="py-4 px-3">
+                          <span className="inline-block rounded-full bg-tag px-3 py-1 text-[12px] font-bold text-tag-ink whitespace-nowrap">
+                            {HOLDING_TYPE_LABELS[h.holdingType ?? "core"]}
+                          </span>
+                        </td>
+                        <td className="py-4 px-3 text-right text-[14px] font-semibold text-ink">{h.shares}</td>
+                        <td className="py-4 px-3 text-right text-[14px] font-semibold text-muted">{maskTHB(formatTHB(avgCostTHB), privacyMode)}</td>
+                        <td className="py-4 px-3 text-right text-[14px] font-semibold text-ink">{maskTHB(formatTHB(currentPriceTHB), privacyMode)}</td>
+                        <td className={`py-4 px-3 text-right text-[14px] font-semibold whitespace-nowrap ${h.holdingId && isNavStale(h) ? "text-loss" : "text-muted"}`}>
+                          {h.navDate ?? "—"}
+                        </td>
+                        <td className="py-4 px-3 text-right">
+                          <div className="text-[14px] font-bold text-ink">{maskTHB(formatTHB(marketValue), privacyMode)}</div>
+                          <div className="mt-0.5 text-[12px] font-medium text-muted">{formatAllocation(allocation)}</div>
+                        </td>
+                        <td className={`py-4 px-3 text-right text-[14px] font-bold ${isGainPos ? "text-pos" : isGainNeg ? "text-neg" : "text-muted"}`}>
+                          {gainLoss === 0 ? "—" : maskTHB(formatTHB(gainLoss), privacyMode)}
+                        </td>
+                        <td className="py-4 px-3 text-right">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12.5px] font-bold ${
+                              isGainPos ? "bg-pos-soft text-pos" : isGainNeg ? "bg-neg-soft text-neg" : "bg-tag text-tag-ink"
+                            }`}
+                          >
+                            {isGainPos && (
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+                              </svg>
+                            )}
+                            {isGainNeg && (
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/>
+                              </svg>
+                            )}
+                            {formatPercent(gainLossPercent)}
+                          </span>
+                        </td>
+                        <td className="py-4 pl-3 pr-[18px]">
+                          <button
+                            onClick={() => onEdit(h)}
+                            className="flex h-8 w-8 items-center justify-center rounded-[9px] text-faint hover:bg-[#F1F2F4] hover:text-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
+                            aria-label={`Edit ${h.name}`}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                              <path d="m15 5 4 4"/>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -477,7 +497,6 @@ function HoldingCard({
   onEdit: (holding: Holding) => void;
 }) {
   const { privacyMode } = usePrivacyMode();
-  // Convert to THB for consistent display
   const avgCostTHB = toTHB(holding.averageCost, holding.averageCostCurrency);
   const currentPriceTHB = toTHB(holding.currentPrice, holding.currentPriceCurrency);
   const marketValue = holding.shares * currentPriceTHB;
@@ -485,74 +504,61 @@ function HoldingCard({
   const gainLoss = marketValue - totalCost;
   const gainLossPercent = totalCost > 0 ? gainLoss / totalCost : 0;
   const allocation = totalMarketValue > 0 ? marketValue / totalMarketValue : 0;
-  const gainLossColor = gainLoss > 0 ? "text-gain" : gainLoss < 0 ? "text-loss" : "";
+  const isGainPos = gainLoss > 0;
+  const isGainNeg = gainLoss < 0;
 
   return (
     <article
-      onClick={() => onEdit(holding)}
-      className="cursor-pointer rounded-lg border border-foreground/10 px-4 py-3 transition-colors hover:border-foreground/25 hover:bg-foreground/[0.04]"
-      aria-label={`Edit ${holding.name} holding`}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onEdit(holding);
-        }
-      }}
+      className="rounded-[16px] border border-line bg-panel px-[18px] py-4"
+      style={{ boxShadow: "0 1px 2px rgba(20,20,30,.02)" }}
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-2.5">
         <div>
-          <div className="font-medium">{holding.name}</div>
-          <div className="mt-0.5 flex items-center gap-2 text-xs text-foreground/60">
-            {holding.ticker && <span className="uppercase">{holding.ticker}</span>}
-            <span>{ASSET_TYPE_LABELS[holding.assetType]}</span>
-            <span>{HOLDING_TYPE_LABELS[holding.holdingType ?? "core"]}</span>
+          <div className="text-[16px] font-bold tracking-[-0.01em] text-ink">{holding.name}</div>
+          <div className="mt-[7px] flex items-center gap-2">
+            <span className="rounded-full bg-tag px-2.5 py-0.5 text-[11.5px] font-bold text-tag-ink">
+              {HOLDING_TYPE_LABELS[holding.holdingType ?? "core"]}
+            </span>
+            <span className="text-[12px] font-medium text-muted">{ASSET_TYPE_LABELS[holding.assetType]}</span>
           </div>
         </div>
-        <div className="rounded-md p-1.5 text-foreground/40">
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+        <button
+          onClick={() => onEdit(holding)}
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[9px] border border-line bg-[#FBFBFC] text-faint hover:text-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
+          aria-label={`Edit ${holding.name} holding`}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+            <path d="m15 5 4 4"/>
           </svg>
-        </div>
+        </button>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-y-1.5 text-sm tabular-nums">
-        <div className="text-foreground/60">Shares</div>
-        <div className="text-right">{holding.shares}</div>
-
-        <div className="text-foreground/60">Avg Cost</div>
-        <div className="text-right">{maskTHB(formatTHB(avgCostTHB), privacyMode)}</div>
-
-        <div className="text-foreground/60">Current Price</div>
-        <div className="text-right">{maskTHB(formatTHB(currentPriceTHB), privacyMode)}</div>
-
-        <div className="text-foreground/60 font-medium">Market Value</div>
-        <div className="text-right font-medium">{maskTHB(formatTHB(marketValue), privacyMode)}</div>
-
-        <div className="text-foreground/60">Allocation</div>
-        <div className="text-right">{formatAllocation(allocation)}</div>
-
-        <div className="text-foreground/60">Gain/Loss</div>
-        <div className={`text-right ${gainLossColor}`}>
-          {maskTHB(formatTHB(gainLoss), privacyMode)} ({formatPercent(gainLossPercent)})
+      <div className="mt-3.5 flex items-end justify-between gap-2.5">
+        <div>
+          <div className="text-[22px] font-extrabold tabular-nums tracking-[-0.02em] text-ink">
+            {maskTHB(formatTHB(marketValue), privacyMode)}
+          </div>
+          <div className="mt-0.5 text-[11.5px] font-medium text-muted tabular-nums">
+            {formatAllocation(allocation)} of portfolio
+          </div>
         </div>
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12.5px] font-bold tabular-nums ${
+            isGainPos ? "bg-pos-soft text-pos" : isGainNeg ? "bg-neg-soft text-neg" : "bg-tag text-tag-ink"
+          }`}
+        >
+          {isGainPos && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>}
+          {isGainNeg && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>}
+          {formatPercent(gainLossPercent)}
+        </span>
+      </div>
 
-        {(holding.navDate || holding.holdingId) && (
-          <>
-            <div className={holding.holdingId && isNavStale(holding) ? "text-loss" : "text-foreground/40"}>NAV Date</div>
-            <div className={`text-right ${holding.holdingId && isNavStale(holding) ? "text-loss" : "text-foreground/40"}`}>
-              {holding.navDate ?? "—"}
-            </div>
-          </>
-        )}
-
-        {holding.updatedAt && (
-          <>
-            <div className="text-foreground/40">Updated</div>
-            <div className="text-right text-foreground/40">{formatDate(holding.updatedAt)}</div>
-          </>
-        )}
+      <div className="mt-3.5 grid grid-cols-2 gap-3 border-t border-line pt-3.5">
+        <div><div className="text-[11px] font-semibold text-muted">Shares</div><div className="mt-0.5 text-[13.5px] font-bold tabular-nums text-ink">{holding.shares}</div></div>
+        <div><div className="text-[11px] font-semibold text-muted">NAV Date</div><div className="mt-0.5 text-[13.5px] font-bold tabular-nums text-muted">{holding.navDate ?? "—"}</div></div>
+        <div><div className="text-[11px] font-semibold text-muted">Avg Cost</div><div className="mt-0.5 text-[13.5px] font-bold tabular-nums text-muted">{maskTHB(formatTHB(avgCostTHB), privacyMode)}</div></div>
+        <div><div className="text-[11px] font-semibold text-muted">Price</div><div className="mt-0.5 text-[13.5px] font-bold tabular-nums text-ink">{maskTHB(formatTHB(currentPriceTHB), privacyMode)}</div></div>
       </div>
     </article>
   );
@@ -587,12 +593,12 @@ function EmptyState({ portfolioName, onAdd }: { portfolioName: string; onAdd: ()
       <div className="mt-6 flex items-center gap-3">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+          className="inline-flex items-center gap-1.5 rounded-[11px] border border-line2 bg-panel px-4 py-2.5 text-[14px] font-semibold text-muted hover:text-ink transition-colors"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M19 12H5m7-7-7 7 7 7"/>
           </svg>
-          Back
+          All portfolios
         </Link>
         <button
           type="button"

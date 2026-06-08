@@ -287,23 +287,21 @@ export default function HomePage() {
 
   return (
     <section aria-label="Portfolio overview">
-      {/* Summary section */}
+      {/* Page heading */}
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight">
-          Portfolio Summary
-        </h2>
-        <p className="mt-1 text-sm text-foreground/60">
+        <h1 className="text-[30px] font-extrabold tracking-[-0.02em] text-ink">Portfolio Summary</h1>
+        <p className="mt-1 text-sm font-medium text-muted">
           {portfolios.length} {portfolios.length === 1 ? "portfolio" : "portfolios"} · {allHoldings.length} {allHoldings.length === 1 ? "holding" : "holdings"}
         </p>
 
-        <div className="mt-6">
+        <div className="mt-[22px]">
           <PortfolioSummary holdings={allHoldings} />
         </div>
 
         {/* Bucket Strategy Summary */}
-        <div className="mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-foreground/70">Bucket Strategy</h3>
+        <div className="mt-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[15px] font-bold text-ink">Bucket Strategy</h2>
             {!editingTargets && (
               <button
                 type="button"
@@ -311,8 +309,11 @@ export default function HomePage() {
                   setTargetInputs(settings);
                   setEditingTargets(true);
                 }}
-                className="text-xs text-foreground/50 hover:text-foreground/80 underline underline-offset-2"
+                className="inline-flex items-center gap-2 rounded-[10px] border border-line2 bg-panel px-3 py-[7px] text-[13px] font-semibold text-muted hover:text-ink transition-colors"
               >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="1" x2="7" y1="14" y2="14"/><line x1="9" x2="15" y1="8" y2="8"/><line x1="17" x2="23" y1="16" y2="16"/>
+                </svg>
                 Edit targets
               </button>
             )}
@@ -386,7 +387,7 @@ export default function HomePage() {
       {/* Portfolio cards section */}
       <div className="mt-10">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold tracking-tight">Portfolios</h3>
+          <h2 className="text-[15px] font-bold text-ink">Portfolios</h2>
 
           <div className="flex items-center gap-2">
             {/* Sync NAV button */}
@@ -395,7 +396,7 @@ export default function HomePage() {
               onClick={syncNavPrices}
               disabled={syncState === "loading"}
               className={[
-                "inline-flex items-center gap-1.5 rounded-md border border-foreground/20 px-3 py-2 text-sm font-medium text-foreground/80 hover:border-foreground/40 hover:bg-foreground/[0.04] focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+                "inline-flex items-center gap-1.5 rounded-[10px] border border-line2 bg-panel px-3 h-[38px] text-[13px] font-semibold text-muted hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50",
                 syncState === "success" ? "text-gain" : "",
                 syncState === "error" ? "text-loss" : "",
               ].join(" ").trim()}
@@ -470,7 +471,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
           {sortedPortfolios.map((p) => {
             const stats = statsMap.get(p.id)!;
             return (

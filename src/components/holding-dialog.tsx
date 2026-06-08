@@ -187,18 +187,19 @@ export function HoldingDialog({
     <dialog
       ref={dialogRef}
       onClick={handleBackdropClick}
-      className="fixed inset-0 m-0 h-full w-full bg-transparent p-0 backdrop:bg-black/50 sm:m-auto sm:h-auto sm:max-h-[85vh] sm:w-full sm:max-w-lg sm:rounded-xl"
+      className="fixed inset-0 m-0 h-full w-full bg-transparent p-0 backdrop:bg-[rgba(20,22,34,.42)] sm:m-auto sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-[680px] sm:rounded-[22px]"
+      style={{ boxShadow: "0 30px 80px -24px rgba(15,17,30,.5)" }}
     >
-      <div className="flex h-full flex-col bg-background text-foreground sm:rounded-xl sm:border sm:border-foreground/10">
+      <div className="flex h-full flex-col bg-panel text-ink sm:rounded-[22px]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-3 sm:px-6">
-          <h2 className="text-lg font-semibold">
+        <div className="flex items-center justify-between border-b border-line px-6 py-5 sm:px-7">
+          <h2 className="text-[20px] font-extrabold tracking-[-0.01em]">
             {isEditing ? "Edit Holding" : "Add Holding"}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1.5 text-foreground/50 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-line2 bg-panel text-muted hover:bg-[#F4F5F7] hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
             aria-label="Close dialog"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
@@ -209,10 +210,10 @@ export function HoldingDialog({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-y-auto">
-          <div className="flex-1 space-y-4 px-4 py-4 sm:px-6" style={{ touchAction: "manipulation" }}>
+          <div className="flex-1 space-y-[18px] px-6 py-6 sm:px-7" style={{ touchAction: "manipulation" }}>
             {/* Name */}
             <div>
-              <label htmlFor="holding-name" className="block text-sm font-medium">
+              <label htmlFor="holding-name" className="block text-[13.5px] font-bold text-ink mb-2">
                 Name
               </label>
               <input
@@ -224,14 +225,14 @@ export function HoldingDialog({
                 defaultValue={holding?.name ?? ""}
                 placeholder="e.g. Bangkok Bank…"
                 autoComplete="off"
-                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                className="block w-full h-12 rounded-[12px] border border-line2 bg-[#FBFBFC] px-3.5 text-[15px] font-semibold text-ink placeholder:text-faint placeholder:font-medium focus-visible:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent-soft"
               />
             </div>
 
             {/* Ticker */}
             <div>
-              <label htmlFor="holding-ticker" className="block text-sm font-medium">
-                Ticker <span className="font-normal text-foreground/50">(optional)</span>
+              <label htmlFor="holding-ticker" className="block text-[13.5px] font-bold text-ink mb-2">
+                Ticker <span className="font-semibold text-faint">(optional)</span>
               </label>
               <input
                 id="holding-ticker"
@@ -240,13 +241,13 @@ export function HoldingDialog({
                 defaultValue={holding?.ticker ?? ""}
                 placeholder="e.g. BBL…"
                 autoComplete="off"
-                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm uppercase placeholder:normal-case placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                className="block w-full h-12 rounded-[12px] border border-line2 bg-[#FBFBFC] px-3.5 text-[15px] font-semibold uppercase text-ink placeholder:normal-case placeholder:text-faint placeholder:font-medium focus-visible:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent-soft"
               />
             </div>
 
             {/* Asset Type */}
             <div>
-              <label htmlFor="holding-asset-type" className="block text-sm font-medium">
+              <label htmlFor="holding-asset-type" className="block text-[13.5px] font-bold text-ink mb-2">
                 Asset Type
               </label>
               <select
@@ -255,7 +256,7 @@ export function HoldingDialog({
                 required
                 value={assetType}
                 onChange={(e) => setAssetType(e.target.value as AssetType)}
-                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                className="block w-full h-12 rounded-[12px] border border-line2 bg-[#FBFBFC] px-3.5 text-[15px] font-semibold text-ink focus-visible:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent-soft"
               >
                 {ASSET_TYPES.map(([value, label]) => (
                   <option key={value} value={value}>
@@ -267,7 +268,7 @@ export function HoldingDialog({
 
             {/* Holding Type */}
             <div>
-              <label htmlFor="holding-type" className="block text-sm font-medium">
+              <label htmlFor="holding-type" className="block text-[13.5px] font-bold text-ink mb-2">
                 Type
               </label>
               <select
@@ -275,7 +276,7 @@ export function HoldingDialog({
                 name="holdingType"
                 required
                 defaultValue={holding?.holdingType ?? "core"}
-                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                className="block w-full h-12 rounded-[12px] border border-line2 bg-[#FBFBFC] px-3.5 text-[15px] font-semibold text-ink focus-visible:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent-soft"
               >
                 {HOLDING_TYPES.map(([value, label]) => (
                   <option key={value} value={value}>
@@ -287,9 +288,9 @@ export function HoldingDialog({
 
             {/* Target Allocation */}
             <div>
-              <label htmlFor="holding-target-allocation" className="block text-sm font-medium">
+              <label htmlFor="holding-target-allocation" className="block text-[13.5px] font-bold text-ink mb-2">
                 Target Allocation (%){" "}
-                <span className="font-normal text-foreground/50">(optional)</span>
+                <span className="font-semibold text-faint">(optional)</span>
               </label>
               <input
                 id="holding-target-allocation"
@@ -303,7 +304,7 @@ export function HoldingDialog({
                 onChange={(e) => setTargetAllocationValue(e.target.value)}
                 placeholder="e.g. 25"
                 autoComplete="off"
-                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                className="block w-full h-12 rounded-[12px] border border-line2 bg-[#FBFBFC] px-3.5 text-[15px] font-semibold tabular-nums text-ink placeholder:text-faint placeholder:font-medium focus-visible:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent-soft"
               />
               <p
                 className={`mt-1 text-xs ${totalAllocated > 100 ? "text-loss" : "text-foreground/50"}`}
@@ -319,7 +320,7 @@ export function HoldingDialog({
 
             {/* Shares / Units — or Balance for cash-like assets */}
             <div>
-              <label htmlFor="holding-shares" className="block text-sm font-medium">
+              <label htmlFor="holding-shares" className="block text-[13.5px] font-bold text-ink mb-2">
                 {isCashLike ? "Balance (THB)" : "Shares / Units"}
               </label>
               <input
@@ -333,7 +334,7 @@ export function HoldingDialog({
                 defaultValue={holding?.shares ?? ""}
                 placeholder={isCashLike ? "e.g. 50000…" : "e.g. 100…"}
                 autoComplete="off"
-                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                className="block w-full h-12 rounded-[12px] border border-line2 bg-[#FBFBFC] px-3.5 text-[15px] font-semibold tabular-nums text-ink placeholder:text-faint placeholder:font-medium focus-visible:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent-soft"
               />
               {isCashLike && (
                 <p className="mt-1 text-xs text-foreground/50">Enter your total cash balance</p>
@@ -348,8 +349,8 @@ export function HoldingDialog({
               </>
             ) : (
               <div>
-                <label htmlFor="holding-avg-cost" className="block text-sm font-medium">
-                  Average Cost <span className="font-normal text-foreground/50">(per unit)</span>
+                <label htmlFor="holding-avg-cost" className="block text-[13.5px] font-bold text-ink mb-2">
+                  Average Cost <span className="font-semibold text-faint">(per unit)</span>
                 </label>
                 <div className="mt-1 flex gap-2">
                   <input
@@ -363,13 +364,13 @@ export function HoldingDialog({
                     defaultValue={holding?.averageCost ?? ""}
                     placeholder="e.g. 120.50…"
                     autoComplete="off"
-                    className="block flex-1 rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                    className="block flex-1 h-12 rounded-[12px] border border-line2 bg-[#FBFBFC] px-3.5 text-[15px] font-semibold tabular-nums text-ink placeholder:text-faint placeholder:font-medium focus-visible:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent-soft"
                   />
                   <select
                     id="holding-avg-cost-currency"
                     name="averageCostCurrency"
                     defaultValue={holding?.averageCostCurrency ?? "THB"}
-                    className="w-20 rounded-md border border-foreground/20 bg-transparent px-2 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                    className="w-20 h-12 rounded-[12px] border border-line2 bg-[#FBFBFC] px-2.5 text-[15px] font-semibold text-ink focus-visible:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent-soft"
                   >
                     {CURRENCIES.map(([value, label]) => (
                       <option key={value} value={value}>
@@ -389,8 +390,8 @@ export function HoldingDialog({
               </>
             ) : (
               <div>
-                <label htmlFor="holding-current-price" className="block text-sm font-medium">
-                  Current Price <span className="font-normal text-foreground/50">(per unit)</span>
+                <label htmlFor="holding-current-price" className="block text-[13.5px] font-bold text-ink mb-2">
+                  Current Price <span className="font-semibold text-faint">(per unit)</span>
                 </label>
                 <div className="mt-1 flex gap-2">
                   <input
@@ -405,13 +406,13 @@ export function HoldingDialog({
                     onChange={(e) => setPriceValue(e.target.value)}
                     placeholder="e.g. 135.00…"
                     autoComplete="off"
-                    className="block flex-1 rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm tabular-nums placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                    className="block flex-1 h-12 rounded-[12px] border border-line2 bg-[#FBFBFC] px-3.5 text-[15px] font-semibold tabular-nums text-ink placeholder:text-faint placeholder:font-medium focus-visible:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent-soft"
                   />
                   <select
                     id="holding-current-price-currency"
                     name="currentPriceCurrency"
                     defaultValue={holding?.currentPriceCurrency ?? "THB"}
-                    className="w-20 rounded-md border border-foreground/20 bg-transparent px-2 py-2.5 text-sm focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                    className="w-20 h-12 rounded-[12px] border border-line2 bg-[#FBFBFC] px-2.5 text-[15px] font-semibold text-ink focus-visible:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent-soft"
                   >
                     {CURRENCIES.map(([value, label]) => (
                       <option key={value} value={value}>
@@ -425,8 +426,8 @@ export function HoldingDialog({
 
             {/* Company ID */}
             <div>
-              <label htmlFor="holding-company-id" className="block text-sm font-medium">
-                Company ID <span className="font-normal text-foreground/50">(optional)</span>
+              <label htmlFor="holding-company-id" className="block text-[13.5px] font-bold text-ink mb-2">
+                Company ID <span className="font-semibold text-faint">(optional)</span>
               </label>
               <input
                 id="holding-company-id"
@@ -435,14 +436,14 @@ export function HoldingDialog({
                 defaultValue={holding?.companyId ?? ""}
                 placeholder="e.g. BBL…"
                 autoComplete="off"
-                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                className="block w-full h-12 rounded-[12px] border border-line2 bg-[#FBFBFC] px-3.5 text-[15px] font-semibold text-ink placeholder:text-faint placeholder:font-medium focus-visible:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent-soft"
               />
             </div>
 
             {/* Holding ID */}
             <div>
-              <label htmlFor="holding-holding-id" className="block text-sm font-medium">
-                Holding ID <span className="font-normal text-foreground/50">(optional)</span>
+              <label htmlFor="holding-holding-id" className="block text-[13.5px] font-bold text-ink mb-2">
+                Holding ID <span className="font-semibold text-faint">(optional)</span>
               </label>
               <input
                 id="holding-holding-id"
@@ -451,20 +452,20 @@ export function HoldingDialog({
                 defaultValue={holding?.holdingId ?? ""}
                 placeholder="e.g. 12345…"
                 autoComplete="off"
-                className="mt-1 block w-full rounded-md border border-foreground/20 bg-transparent px-3 py-2.5 text-sm placeholder:text-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                className="block w-full h-12 rounded-[12px] border border-line2 bg-[#FBFBFC] px-3.5 text-[15px] font-semibold text-ink placeholder:text-faint placeholder:font-medium focus-visible:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent-soft"
               />
             </div>
           </div>
 
           {/* Footer */}
-          <div className="flex flex-col-reverse gap-2 border-t border-foreground/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex flex-col-reverse gap-2 border-t border-line bg-[#FAFAFB] px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
             {/* Delete + Update NAV — only in edit mode */}
             <div className="flex items-center gap-2">
               {isEditing && onDelete && (
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="rounded-md px-3 py-2 text-sm font-medium text-loss hover:bg-loss/10 focus-visible:ring-2 focus-visible:ring-loss/30 focus-visible:outline-none"
+                  className="inline-flex h-11 items-center rounded-[12px] px-3 text-[14px] font-bold text-neg hover:bg-[#FBEDEE] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neg/30"
                 >
                   Delete
                 </button>
@@ -475,7 +476,7 @@ export function HoldingDialog({
                     type="button"
                     onClick={handleUpdateNav}
                     disabled={navLoading}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-foreground/20 px-3 py-2 text-sm font-medium hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-11 items-center gap-1.5 rounded-[12px] border border-line2 bg-panel px-3 text-[14px] font-semibold text-muted hover:text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {navLoading ? (
                       <>
@@ -499,13 +500,13 @@ export function HoldingDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-md border border-foreground/20 px-4 py-2 text-sm font-medium hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+                className="inline-flex h-11 items-center rounded-[12px] border border-line2 bg-panel px-4 text-[14px] font-bold text-ink hover:bg-[#F4F5F7] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-foreground/90 focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                className="inline-flex h-11 items-center rounded-[12px] bg-accent px-4 text-[14px] font-bold text-white hover:brightness-110 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
               >
                 {isEditing ? "Save Changes" : "Add Holding"}
               </button>

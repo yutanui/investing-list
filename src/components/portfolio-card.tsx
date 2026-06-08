@@ -20,34 +20,47 @@ export function PortfolioCard({
   holdingsCount,
   totalValue,
   totalCost,
-  gainLoss,
   gainLossPercent,
   onEdit,
 }: PortfolioCardProps) {
   const { privacyMode } = usePrivacyMode();
-  const gainLossColor =
-    gainLoss > 0
-      ? "text-gain"
-      : gainLoss < 0
-        ? "text-loss"
-        : "text-foreground/60";
+  const isPos = gainLossPercent > 0;
+  const isNeg = gainLossPercent < 0;
 
   return (
-    <article className="relative rounded-lg border border-foreground/10 bg-background p-4 hover:border-foreground/20">
+    <article
+      className="group relative flex min-h-[168px] cursor-pointer flex-col rounded-[18px] border border-line bg-panel p-[22px] transition-all duration-150 hover:-translate-y-0.5 hover:border-faint"
+      style={{ boxShadow: "0 1px 2px rgba(20,20,30,.02)" }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLElement).style.boxShadow = "0 14px 30px -20px rgba(20,20,30,.2)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLElement).style.boxShadow = "0 1px 2px rgba(20,20,30,.02)";
+      }}
+    >
+      {/* Clickable overlay for navigation */}
       <Link
         href={`/portfolio/${portfolio.id}`}
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-0 rounded-[18px]"
         aria-label={`View ${portfolio.name}`}
       />
 
-      <div className="relative z-10 flex items-start justify-between pointer-events-none">
+      <div className="relative z-10 flex items-start justify-between gap-2.5 pointer-events-none">
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-base font-semibold">{portfolio.name}</h3>
-          <p className="mt-1 text-sm text-foreground/60">
+          <h3 className="truncate text-[17px] font-bold tracking-[-0.01em] text-ink leading-[1.25]">
+            {portfolio.name}
+          </h3>
+          <div className="mt-[7px] flex items-center gap-1.5 text-[13px] font-medium text-muted">
+            {/* Layers icon */}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/>
+              <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/>
+              <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>
+            </svg>
             {holdingsCount} {holdingsCount === 1 ? "holding" : "holdings"}
-          </p>
+          </div>
         </div>
-
+        {/* Edit button */}
         <button
           type="button"
           onClick={(e) => {
@@ -55,24 +68,52 @@ export function PortfolioCard({
             e.stopPropagation();
             onEdit();
           }}
-          className="pointer-events-auto ml-3 rounded-md p-1.5 text-foreground/50 hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none"
+          className="pointer-events-auto flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[9px] text-faint hover:bg-[#F2F1EC] hover:text-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30"
           aria-label={`Edit ${portfolio.name}`}
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+            <path d="m15 5 4 4"/>
           </svg>
         </button>
       </div>
 
-      <div className="relative z-10 mt-3 text-right pointer-events-none">
-        <span className="text-lg font-semibold tabular-nums">{maskTHB(formatTHB(totalValue), privacyMode)}</span>
-        {holdingsCount > 0 && (
-          <div className="mt-1 text-xs text-foreground/50">
-            <span>Cost {maskTHB(formatTHB(totalCost), privacyMode)}</span>
-            <span className={`ml-2 font-medium ${gainLossColor}`}>
-              {maskTHB(formatTHB(gainLoss), privacyMode)} ({formatPercent(gainLossPercent)})
-            </span>
+      <div className="relative z-10 mt-auto flex items-end justify-between gap-2.5 pt-[18px] pointer-events-none">
+        <div>
+          <div
+            className="tabular-nums text-ink"
+            style={{ fontSize: "23px", fontWeight: 800, letterSpacing: "-0.02em" }}
+          >
+            {maskTHB(formatTHB(totalValue), privacyMode)}
           </div>
+          {holdingsCount > 0 && (
+            <div className="mt-1 text-[12.5px] font-medium text-muted tabular-nums">
+              Cost {maskTHB(formatTHB(totalCost), privacyMode)}
+            </div>
+          )}
+        </div>
+        {holdingsCount > 0 && (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-bold tabular-nums ${
+              isPos
+                ? "bg-pos-soft text-pos"
+                : isNeg
+                ? "bg-neg-soft text-neg"
+                : "bg-tag text-tag-ink"
+            }`}
+          >
+            {isPos && (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
+              </svg>
+            )}
+            {isNeg && (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/>
+              </svg>
+            )}
+            {formatPercent(gainLossPercent)}
+          </span>
         )}
       </div>
     </article>

@@ -87,14 +87,15 @@ All components are in `src/components/` — hand-written with inline Tailwind, n
 
 | Component | Purpose |
 |---|---|
-| `app-shell.tsx` | Root layout wrapper — mounts providers and renders `Header` + `<main>` around `{children}`; no sidebar |
-| `header.tsx` | Top nav bar with app title, "Add Portfolio" button (opens `PortfolioDialog`), and auth controls (Sign In / Sign Out); auto-opens `AuthDialog` in recovery mode |
+| `app-shell.tsx` | Root layout wrapper — mounts providers and renders `Header` + `<main>` (centered `max-w-[1280px]` container) around `{children}`; no sidebar |
+| `header.tsx` | Sticky navy-accent top nav: layers logo + "Investing Portfolio" wordmark, privacy toggle (`data-testid="privacy-toggle"`), navy "Add Portfolio" primary button (opens `PortfolioDialog`), user chip + Sign Out / Sign In; auto-opens `AuthDialog` in recovery mode |
 | `auth-dialog.tsx` | Modal for all auth flows — four modes: `sign_in`, `sign_up`, `reset_request` (sends email link), `reset_new_password` (set new password after recovery) |
 | `portfolio-nav.tsx` | Collapsible left sidebar with sortable portfolio list (retained but not rendered — was replaced by in-page cards grid on homepage) |
-| `portfolio-card.tsx` | Card used on the home page in the portfolios grid; shows portfolio name, holdings count, total value, cost, and gain/loss |
+| `portfolio-card.tsx` | Card used on the home page in the portfolios grid (hover-lift, white panel); shows portfolio name, holdings count, total value, cost, and a pos/neg return chip. Receives `gainLossPercent` as a ratio (0–1) and passes it straight to `formatPercent` (no `/100`). Still accepts a `gainLoss` prop in its interface though the new design no longer reads it |
 | `portfolio-dialog.tsx` | Modal (`<dialog>`) for creating / editing / deleting a portfolio |
 | `holding-dialog.tsx` | Modal (`<dialog>`) for creating / editing / deleting a holding; includes all fields: name, ticker, asset type, holding type, target allocation (%), shares, average cost + currency, current price + currency, company ID, holding ID; the target-allocation field shows a running "Total allocated: X% across N holdings" footer (takes optional `allHoldings` prop to compute it, excluding the edited holding) |
-| `portfolio-summary.tsx` | Stat cards grid: Market Value, Total Cost, Gain/Loss, Return %; plus a core/satellite breakdown row |
+| `portfolio-summary.tsx` | Hero panel (rounded white card, two-column layout): large Market Value with all-time return chip on the left, a 2×2 grid of Total Cost / Gain-Loss / Return on the right |
+| `bucket-summary.tsx` | Three bucket cards (Core / Satellite / etc.) with a progress track and target marker per card; shows actual %, target %, and signed delta when targets are set |
 | `rebalance-section.tsx` | Rebalancing block on the portfolio page (only rendered when ≥1 holding has a `targetAllocation`): drift table (desktop) / card list (mobile), inline ±drift-threshold input in the header, and a Suggested Transfers subsection driven by `src/lib/rebalance.ts` + `useRebalanceSettings`. Rows are sorted by `targetPct` descending for display (slice+sort inside the component, not in `computeDrift`). Drift table includes "Current Value" (`holdingValueTHB(row.holding)`) and "Target Amount" (`(row.targetPct / 100) * totalMarketValue`) columns after "Actual" and before "Drift", in both desktop table and mobile cards |
 
 Dialog pattern: all dialogs use the native `<dialog>` element (`showModal()` / `close()`), auto-focus the first input, close on Escape or backdrop click.
@@ -103,10 +104,17 @@ Responsive layout: mobile shows card-based views; desktop (`sm:` breakpoint) sho
 
 ### Design tokens
 
-Custom Tailwind color aliases used throughout (defined in the global CSS / Tailwind config):
-- `text-gain` / `bg-gain` — green, positive returns
-- `text-loss` / `bg-loss` — red, negative returns
+UI follows a "Neutral gray + Navy" theme: gray app background (`#F0F1F4`), white cards, deep navy accent. Font is **Plus Jakarta Sans** (imported via `@import url(...)` at the top of `globals.css`, before `@import "tailwindcss"` — the order matters or the build warns).
+
+Custom Tailwind color aliases (all defined in `@theme inline` in `src/app/globals.css`; in Tailwind v4 each `--color-X` becomes `text-X` / `bg-X` / `border-X`):
+- `text-gain` / `text-loss` — legacy green / red return colors (still used in a few places)
 - `text-foreground` / `bg-background` — theme-aware base colors
+- `panel` (#FFFFFF card surface), `ink` (#1B1B22 primary text), `muted` / `faint` (secondary / tertiary text)
+- `line` / `line2` (borders), `track` (progress-bar track), `tag` / `tag-ink` (neutral pills)
+- `accent` / `accent-soft` (navy primary + soft navy bg)
+- `pos` / `pos-soft` and `neg` / `neg-soft` (positive / negative value chips and soft backgrounds)
+
+Conventions: navy `bg-accent` for primary buttons; `border-line2 bg-panel` for secondary buttons; gain/loss chips use `bg-pos-soft text-pos` / `bg-neg-soft text-neg`; cards use `rounded-[18px] border border-line bg-panel` with a soft inline `boxShadow`.
 
 ### Pages
 
