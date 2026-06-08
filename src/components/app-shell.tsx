@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthProvider } from "@/context/auth-context";
+import { PrivacyModeProvider } from "@/context/privacy-context";
 import { PortfolioListProvider } from "@/context/portfolio-list-context";
 import { HoldingsProvider } from "@/context/holdings-context";
 import { BucketSettingsProvider } from "@/context/bucket-settings-context";
@@ -10,6 +11,7 @@ import { Header } from "@/components/header";
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
+      <PrivacyModeProvider>
       <PortfolioListProvider>
         <HoldingsProvider>
           <BucketSettingsProvider>
@@ -22,6 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </BucketSettingsProvider>
         </HoldingsProvider>
       </PortfolioListProvider>
+      </PrivacyModeProvider>
     </AuthProvider>
   );
 }

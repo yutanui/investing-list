@@ -1,11 +1,15 @@
+"use client";
+
 import { Holding } from "@/types/portfolio";
-import { formatTHB, formatPercent, toTHB } from "@/lib/format";
+import { formatTHB, formatPercent, toTHB, maskTHB } from "@/lib/format";
+import { usePrivacyMode } from "@/context/privacy-context";
 
 interface PortfolioSummaryProps {
   holdings: Holding[];
 }
 
 export function PortfolioSummary({ holdings }: PortfolioSummaryProps) {
+  const { privacyMode } = usePrivacyMode();
   // Derived state — calculated during render, no effects needed
   // All values converted to THB for consistent display
   const totalMarketValue = holdings.reduce(
@@ -29,11 +33,11 @@ export function PortfolioSummary({ holdings }: PortfolioSummaryProps) {
   return (
     <div className="space-y-3">
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <SummaryCard label="Market Value" value={formatTHB(totalMarketValue)} />
-        <SummaryCard label="Total Cost" value={formatTHB(totalCost)} />
+        <SummaryCard label="Market Value" value={maskTHB(formatTHB(totalMarketValue), privacyMode)} />
+        <SummaryCard label="Total Cost" value={maskTHB(formatTHB(totalCost), privacyMode)} />
         <SummaryCard
           label="Gain / Loss"
-          value={formatTHB(gainLoss)}
+          value={maskTHB(formatTHB(gainLoss), privacyMode)}
           valueClassName={gainLossColor}
         />
         <SummaryCard

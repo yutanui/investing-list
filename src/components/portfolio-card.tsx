@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Portfolio } from "@/types/portfolio";
-import { formatTHB, formatPercent } from "@/lib/format";
+import { formatTHB, formatPercent, maskTHB } from "@/lib/format";
+import { usePrivacyMode } from "@/context/privacy-context";
 
 interface PortfolioCardProps {
   portfolio: Portfolio;
@@ -23,6 +24,7 @@ export function PortfolioCard({
   gainLossPercent,
   onEdit,
 }: PortfolioCardProps) {
+  const { privacyMode } = usePrivacyMode();
   const gainLossColor =
     gainLoss > 0
       ? "text-gain"
@@ -63,12 +65,12 @@ export function PortfolioCard({
       </div>
 
       <div className="relative z-10 mt-3 text-right pointer-events-none">
-        <span className="text-lg font-semibold tabular-nums">{formatTHB(totalValue)}</span>
+        <span className="text-lg font-semibold tabular-nums">{maskTHB(formatTHB(totalValue), privacyMode)}</span>
         {holdingsCount > 0 && (
           <div className="mt-1 text-xs text-foreground/50">
-            <span>Cost {formatTHB(totalCost)}</span>
+            <span>Cost {maskTHB(formatTHB(totalCost), privacyMode)}</span>
             <span className={`ml-2 font-medium ${gainLossColor}`}>
-              {formatTHB(gainLoss)} ({formatPercent(gainLossPercent)})
+              {maskTHB(formatTHB(gainLoss), privacyMode)} ({formatPercent(gainLossPercent)})
             </span>
           </div>
         )}

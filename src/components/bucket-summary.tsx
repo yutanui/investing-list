@@ -1,5 +1,8 @@
+"use client";
+
 import { BucketId, BUCKET_LABELS } from "@/types/portfolio";
-import { formatTHB, formatAllocation } from "@/lib/format";
+import { formatTHB, formatAllocation, maskTHB } from "@/lib/format";
+import { usePrivacyMode } from "@/context/privacy-context";
 
 interface BucketData {
   bucketId: BucketId;
@@ -15,6 +18,7 @@ interface BucketSummaryProps {
 }
 
 export function BucketSummary({ buckets, showTargets }: BucketSummaryProps) {
+  const { privacyMode } = usePrivacyMode();
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       {buckets.map(({ bucketId, actualValue, actualPercent, targetPercent, delta }) => (
@@ -26,7 +30,7 @@ export function BucketSummary({ buckets, showTargets }: BucketSummaryProps) {
             {BUCKET_LABELS[bucketId]}
           </p>
           <p className="mt-1 text-lg font-semibold tabular-nums">
-            {formatTHB(actualValue)}
+            {maskTHB(formatTHB(actualValue), privacyMode)}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="text-xs text-foreground/60">
