@@ -1,38 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-gain: #16a34a;
-  --color-loss: #dc2626;
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-    monospace;
+  --background: #F0F1F4;
+  --foreground: #1B1B22;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
-    --color-gain: #4ade80;
-    --color-loss: #f87171;
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-gain: oklch(0.62 0.15 152);
+  --color-loss: oklch(0.62 0.18 22);
+
+  /* New design tokens */
+  --color-panel: #FFFFFF;
+  --color-ink: #1B1B22;
+  --color-muted: #7A7A86;
+  --color-faint: #A6A6B0;
+  --color-line: #E4E6EC;
+  --color-line2: #D8DBE3;
+  --color-track: #E8EAEF;
+  --color-accent: oklch(0.42 0.115 264);
+  --color-accent-soft: oklch(0.94 0.026 264);
+  --color-pos: oklch(0.62 0.15 152);
+  --color-pos-soft: oklch(0.95 0.05 152);
+  --color-neg: oklch(0.62 0.18 22);
+  --color-neg-soft: oklch(0.95 0.05 22);
+  --color-tag: #EEF0F4;
+  --color-tag-ink: #5C6470;
+
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
 body {
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-/*
- * Web design guideline: font-variant-numeric: tabular-nums
- * for aligned number columns — critical for financial tables
- */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
