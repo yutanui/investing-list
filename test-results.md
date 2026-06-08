@@ -1,38 +1,53 @@
 STATUS: PASS
 
-CYCLES_REMAINING: 3
+CYCLES_REMAINING: 1
 
 FAILURES: []
 
-## Test Summary
+## Privacy Mode Feature - Test Results
 
-All 10 functional tests for the rebalancing feature passed successfully.
+All 14 functional tests for the Privacy Mode feature passed successfully.
 
 ### Tests Executed
 
-1. **rebalancing section is hidden when no holdings have target allocations** - PASS
-2. **rebalancing section appears when at least one holding has target allocation** - PASS
-3. **target allocation field exists in holding dialog and accepts numeric input** - PASS
-4. **running total displays in holding dialog showing allocations across other holdings** - PASS
-5. **drift table displays correct target, actual, drift, and status** - PASS
-6. **balanced message displays when all holdings are within drift threshold** - PASS
-7. **transfer suggestion displays with correct from/to holdings and amount** - PASS
-8. **drift threshold input is editable in rebalancing section header** - PASS
-9. **drift status colors are applied correctly** - PASS
-10. **holdings without targets are excluded from drift table but included in total value** - PASS
+1. **Toggle button exists with data-testid** - PASS
+2. **Initial state has aria-pressed set to false** - PASS
+3. **Toggle button sets aria-pressed to true when clicked** - PASS
+4. **Toggle button sets aria-pressed to false when clicked again** - PASS
+5. **Home page shows masked THB amounts when privacy mode is ON** - PASS
+6. **Home page does NOT show masked values when privacy mode is OFF** - PASS
+7. **Session reset: reloading page resets privacy mode to OFF** - PASS
+8. **Privacy button has correct visual styling when ON (blue background)** - PASS
+9. **Privacy button has correct visual styling when OFF (neutral style)** - PASS
+10. **Eye-off icon visible when privacy mode is ON** - PASS
+11. **Eye icon visible when privacy mode is OFF** - PASS
+12. **Privacy mode affects portfolio page holdings values** - PASS
+13. **Privacy mode toggle maintains state across navigation** - PASS
+14. **Accessibility: privacy toggle has aria-label** - PASS
 
 ### Test Execution Time
-14.4 seconds
+28.3 seconds
 
 ### Functionality Verified
 
-- Rebalancing section conditional rendering (only when targets are set)
-- Target allocation field in holding dialog with proper attributes (number type, 0-100 range, 0.01 step)
-- Running total calculation for allocated percentages across holdings
-- Drift table with correct calculations for target %, actual %, drift %, and drift amount (THB)
-- Status classification (Overweight, Underweight, Balanced) based on drift threshold
-- Balanced message display when all holdings are within the 5% drift threshold
-- Transfer suggestions with correct "Move X from Y to Z" format
-- Drift threshold input with editable value and correct constraints (0-50%, 0.5 step)
-- Color coding applied correctly (text-loss for overweight, text-gain for underweight)
-- Holdings without targets excluded from drift table but included in total portfolio value calculations
+- Privacy toggle button visible in header with `data-testid="privacy-toggle"`
+- `aria-pressed` attribute correctly reflects toggle state (false/true)
+- Clicking button toggles state between ON and OFF
+- When privacy mode is ON, all THB currency values display as •••••• (masked)
+- When privacy mode is OFF, currency values display normally as formatted Thai Baht
+- Visual styling changes based on state:
+  - OFF: neutral border style with `text-foreground/80`
+  - ON: blue highlight with `bg-blue-100` and `text-blue-700`
+- Icon changes based on state:
+  - OFF: eye icon (standard visibility icon)
+  - ON: eye-off icon (hidden/slashed eye icon)
+- Privacy mode state is session-level (not persisted to localStorage)
+- Page reload resets privacy mode to OFF
+- Privacy mode maintains state during navigation between pages
+- `aria-label` attribute updates appropriately:
+  - OFF: "Enable privacy mode"
+  - ON: "Disable privacy mode"
+- Masking works on all pages that display currency values:
+  - Home page portfolio cards
+  - Portfolio detail page holdings
+  - All summary cards (Market Value, Total Cost, Gain/Loss)
