@@ -15,8 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-        <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content="#F0F1F4" />
       </head>
       <body className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased" suppressHydrationWarning>
         <a
