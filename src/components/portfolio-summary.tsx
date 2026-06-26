@@ -25,14 +25,14 @@ export function PortfolioSummary({ holdings }: PortfolioSummaryProps) {
 
   return (
     <div
-      className="grid overflow-hidden rounded-[22px] border border-line bg-panel"
+      className="overflow-hidden rounded-[22px] border border-line bg-panel sm:grid"
       style={{
         gridTemplateColumns: "1fr 1.35fr",
         boxShadow: "0 1px 2px rgba(20,20,30,.03), 0 12px 30px -18px rgba(20,20,30,.12)",
       }}
     >
       {/* Left: main stat */}
-      <div className="border-r border-line p-8">
+      <div className="border-b border-line p-6 sm:border-b-0 sm:border-r sm:p-8">
         <div className="flex items-center gap-2 text-[13px] font-semibold text-muted">
           {/* Wallet icon */}
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -43,8 +43,8 @@ export function PortfolioSummary({ holdings }: PortfolioSummaryProps) {
           Market Value
         </div>
         <div
-          className="mt-3.5 tabular-nums text-ink"
-          style={{ fontSize: "46px", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1 }}
+          className="mt-3 tabular-nums text-ink"
+          style={{ fontSize: "clamp(30px, 7vw, 46px)", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1 }}
         >
           {maskTHB(formatTHB(totalMarketValue), privacyMode)}
         </div>
@@ -68,25 +68,25 @@ export function PortfolioSummary({ holdings }: PortfolioSummaryProps) {
 
       {/* Right: 2×2 stat grid */}
       <div className="grid grid-cols-2">
-        <div className="border-b border-r border-line px-7 py-6">
+        <div className="border-b border-r border-line px-5 py-5 sm:px-7 sm:py-6">
           <div className="text-[12.5px] font-semibold text-muted">Total Cost</div>
-          <div className="mt-2 text-[24px] font-bold tabular-nums text-ink" style={{ letterSpacing: "-0.02em" }}>
+          <div className="mt-2 text-[18px] font-bold tabular-nums text-ink sm:text-[24px]" style={{ letterSpacing: "-0.02em" }}>
             {maskTHB(formatTHB(totalCost), privacyMode)}
           </div>
         </div>
-        <div className="border-b border-line px-7 py-6">
+        <div className="border-b border-line px-5 py-5 sm:px-7 sm:py-6">
           <div className="text-[12.5px] font-semibold text-muted">Gain / Loss</div>
           <div
-            className={`mt-2 text-[24px] font-bold tabular-nums ${isPos ? "text-pos" : "text-neg"}`}
+            className={`mt-2 text-[18px] font-bold tabular-nums sm:text-[24px] ${isPos ? "text-pos" : "text-neg"}`}
             style={{ letterSpacing: "-0.02em" }}
           >
             {maskTHB(formatTHB(gainLoss), privacyMode)}
           </div>
         </div>
-        <div className="col-span-2 px-7 py-6">
+        <div className="col-span-2 px-5 py-5 sm:px-7 sm:py-6">
           <div className="text-[12.5px] font-semibold text-muted">Return</div>
           <div
-            className={`mt-2 text-[24px] font-bold tabular-nums ${isPos ? "text-pos" : "text-neg"}`}
+            className={`mt-2 text-[18px] font-bold tabular-nums sm:text-[24px] ${isPos ? "text-pos" : "text-neg"}`}
             style={{ letterSpacing: "-0.02em" }}
           >
             {formatPercent(returnPct)}
