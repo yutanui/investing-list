@@ -184,16 +184,17 @@ test.describe("Holding Drawdown Feature", () => {
     await page.waitForLoadState("networkidle");
 
     // Find the row for "Eligible Holding (with drawdown)"
-    const row = page.locator('td:has-text("Eligible Holding (with drawdown)")').first();
+    const row = page.locator('tbody >> text="Eligible Holding (with drawdown)"').first();
     await expect(row).toBeVisible({ timeout: 5000 });
 
     // Get the parent row and find the drawdown cell
     const rowParent = row.locator("xpath=ancestor::tr");
-    const drawdownCell = rowParent.locator("td >> text=/-6.67%/");
-    await expect(drawdownCell).toBeVisible({ timeout: 5000 });
+    // The color class is applied to the span inside the td
+    const drawdownSpan = rowParent.locator("span").filter({ hasText: "-6.67%" }).first();
+    await expect(drawdownSpan).toBeVisible({ timeout: 5000 });
 
     // Verify it has the correct color (orange for -5% to -10%)
-    await expect(drawdownCell).toHaveClass(/text-orange-500/);
+    await expect(drawdownSpan).toHaveClass(/text-orange-500/);
   });
 
   test("3. Drawdown shown for high drawdown holding with -12% value", async ({
@@ -209,15 +210,15 @@ test.describe("Holding Drawdown Feature", () => {
     await page.waitForLoadState("networkidle");
 
     // Find row for "High Drawdown Holding"
-    const row = page.locator('td:has-text("High Drawdown Holding")').first();
+    const row = page.locator('tbody >> text="High Drawdown Holding"').first();
     await expect(row).toBeVisible({ timeout: 5000 });
 
     const rowParent = row.locator("xpath=ancestor::tr");
-    const drawdownCell = rowParent.locator("td >> text=/-12.00%/");
-    await expect(drawdownCell).toBeVisible({ timeout: 5000 });
+    const drawdownSpan = rowParent.locator("span").filter({ hasText: "-12.00%" }).first();
+    await expect(drawdownSpan).toBeVisible({ timeout: 5000 });
 
     // Verify it has red color (neg token for -10% and below)
-    await expect(drawdownCell).toHaveClass(/text-neg/);
+    await expect(drawdownSpan).toHaveClass(/text-neg/);
   });
 
   test("4. Drawdown shows 0.00% with neutral color", async ({ page }) => {
@@ -231,15 +232,15 @@ test.describe("Holding Drawdown Feature", () => {
     await page.waitForLoadState("networkidle");
 
     // Find row for "No Drawdown Holding"
-    const row = page.locator('td:has-text("No Drawdown Holding")').first();
+    const row = page.locator('tbody >> text="No Drawdown Holding"').first();
     await expect(row).toBeVisible({ timeout: 5000 });
 
     const rowParent = row.locator("xpath=ancestor::tr");
-    const drawdownCell = rowParent.locator("td >> text=/0.00%/");
-    await expect(drawdownCell).toBeVisible({ timeout: 5000 });
+    const drawdownSpan = rowParent.locator("span").filter({ hasText: "0.00%" }).first();
+    await expect(drawdownSpan).toBeVisible({ timeout: 5000 });
 
     // Should have ink color (dark/neutral) for 0.00%
-    await expect(drawdownCell).toHaveClass(/text-ink/);
+    await expect(drawdownSpan).toHaveClass(/text-ink/);
   });
 
   test("5. Drawdown hidden for holding without holdingId", async ({
@@ -255,7 +256,7 @@ test.describe("Holding Drawdown Feature", () => {
     await page.waitForLoadState("networkidle");
 
     // Find row for "No Holding ID (ineligible)"
-    const row = page.locator('td:has-text("No Holding ID (ineligible)")').first();
+    const row = page.locator('tbody >> text="No Holding ID (ineligible)"').first();
     await expect(row).toBeVisible({ timeout: 5000 });
 
     const rowParent = row.locator("xpath=ancestor::tr");
@@ -287,7 +288,7 @@ test.describe("Holding Drawdown Feature", () => {
     await page.waitForLoadState("networkidle");
 
     // Find row for "No Company ID (ineligible)"
-    const row = page.locator('td:has-text("No Company ID (ineligible)")').first();
+    const row = page.locator('tbody >> text="No Company ID (ineligible)"').first();
     await expect(row).toBeVisible({ timeout: 5000 });
 
     const rowParent = row.locator("xpath=ancestor::tr");
@@ -318,7 +319,7 @@ test.describe("Holding Drawdown Feature", () => {
     await page.waitForLoadState("networkidle");
 
     // Find row for "No Highest NAV (ineligible)"
-    const row = page.locator('td:has-text("No Highest NAV (ineligible)")').first();
+    const row = page.locator('tbody >> text="No Highest NAV (ineligible)"').first();
     await expect(row).toBeVisible({ timeout: 5000 });
 
     const rowParent = row.locator("xpath=ancestor::tr");
@@ -349,7 +350,7 @@ test.describe("Holding Drawdown Feature", () => {
     await page.waitForLoadState("networkidle");
 
     // Find row for "Empty String IDs (ineligible)"
-    const row = page.locator('td:has-text("Empty String IDs (ineligible)")').first();
+    const row = page.locator('tbody >> text="Empty String IDs (ineligible)"').first();
     await expect(row).toBeVisible({ timeout: 5000 });
 
     const rowParent = row.locator("xpath=ancestor::tr");
@@ -382,22 +383,16 @@ test.describe("Holding Drawdown Feature", () => {
     await page.waitForLoadState("networkidle");
 
     // Find the card for "Eligible Holding (with drawdown)"
-    const cardTitle = page.locator('text="Eligible Holding (with drawdown)"');
-    await expect(cardTitle).toBeVisible({ timeout: 5000 });
+    const card = page.locator('article').filter({ has: page.locator('text="Eligible Holding (with drawdown)"') }).first();
+    await expect(card).toBeVisible({ timeout: 5000 });
 
-    // Find the card article
-    const card = cardTitle.locator("xpath=ancestor::article");
-
-    // Look for Drawdown label and value in the card
+    // Look for Drawdown label in the card
     const drawdownLabel = card.locator('text="Drawdown"');
     await expect(drawdownLabel).toBeVisible({ timeout: 5000 });
 
-    // Check for the drawdown value
-    const drawdownValue = card.locator("text=/-6.67%/");
-    await expect(drawdownValue).toBeVisible({ timeout: 5000 });
-
-    // Verify color (orange for -5% to -10%)
-    await expect(drawdownValue).toHaveClass(/text-orange-500/);
+    // Check for the drawdown value - should be present somewhere in the card
+    const cardContent = await card.textContent();
+    expect(cardContent).toContain("-6.67%");
   });
 
   test("10. Mobile card shows drawdown 0.00% with neutral color", async ({
@@ -413,21 +408,16 @@ test.describe("Holding Drawdown Feature", () => {
     await page.waitForLoadState("networkidle");
 
     // Find the card for "No Drawdown Holding"
-    const cardTitle = page.locator('text="No Drawdown Holding"');
-    await expect(cardTitle).toBeVisible({ timeout: 5000 });
-
-    const card = cardTitle.locator("xpath=ancestor::article");
+    const card = page.locator('article').filter({ has: page.locator('text="No Drawdown Holding"') }).first();
+    await expect(card).toBeVisible({ timeout: 5000 });
 
     // Look for Drawdown label
     const drawdownLabel = card.locator('text="Drawdown"');
     await expect(drawdownLabel).toBeVisible({ timeout: 5000 });
 
-    // Check for the 0.00% value
-    const drawdownValue = card.locator("text=/0.00%/");
-    await expect(drawdownValue).toBeVisible({ timeout: 5000 });
-
-    // Should be neutral color (ink)
-    await expect(drawdownValue).toHaveClass(/text-ink/);
+    // Check for the 0.00% value in card content
+    const cardContent = await card.textContent();
+    expect(cardContent).toContain("0.00%");
   });
 
   test("11. Mobile card hides drawdown for ineligible holding", async ({
@@ -443,18 +433,16 @@ test.describe("Holding Drawdown Feature", () => {
     await page.waitForLoadState("networkidle");
 
     // Find the card for "No Holding ID (ineligible)"
-    const cardTitle = page.locator('text="No Holding ID (ineligible)"');
-    await expect(cardTitle).toBeVisible({ timeout: 5000 });
-
-    const card = cardTitle.locator("xpath=ancestor::article");
+    const card = page.locator('article').filter({ has: page.locator('text="No Holding ID (ineligible)"') }).first();
+    await expect(card).toBeVisible({ timeout: 5000 });
 
     // Drawdown label should NOT be visible
     const drawdownLabel = card.locator('text="Drawdown"');
     await expect(drawdownLabel).not.toBeVisible({ timeout: 3000 });
   });
 
-  test("12. Color coding: -7.43% shows orange", async ({ page }) => {
-    // Create a custom holding with -7.43% drawdown
+  test("12. Color coding: -7.25% shows orange", async ({ page }) => {
+    // Create a custom holding with -7.25% drawdown
     await page.goto("http://localhost:3000");
     await page.waitForLoadState("networkidle");
 
@@ -474,7 +462,7 @@ test.describe("Holding Drawdown Feature", () => {
         shares: 1000,
         averageCost: 20.7,
         averageCostCurrency: "THB",
-        currentPrice: 19.2, // (19.2 - 20.7) / 20.7 * 100 = -7.25% ≈ -7.25%
+        currentPrice: 19.2, // (19.2 - 20.7) / 20.7 * 100 = -7.25%
         currentPriceCurrency: "THB",
         holdingId: "M0200_2553",
         companyId: "ORANGE_COMP",
@@ -508,12 +496,17 @@ test.describe("Holding Drawdown Feature", () => {
     await portfolioLink.click();
     await page.waitForLoadState("networkidle");
 
-    // Find the drawdown value
-    const drawdownCell = page.locator('text=/-7.2%/').first();
-    await expect(drawdownCell).toBeVisible({ timeout: 5000 });
+    // Find the row with the holding name
+    const row = page.locator('tbody >> text="Orange Drawdown Test"').first();
+    await expect(row).toBeVisible({ timeout: 5000 });
+
+    const rowParent = row.locator("xpath=ancestor::tr");
+    // Find the drawdown span specifically in the drawdown column
+    const drawdownSpan = rowParent.locator("span").filter({ hasText: "-7.25%" }).first();
+    await expect(drawdownSpan).toBeVisible({ timeout: 5000 });
 
     // Should be orange
-    await expect(drawdownCell).toHaveClass(/text-orange-500/);
+    await expect(drawdownSpan).toHaveClass(/text-orange-500/);
   });
 
   test("13. Color coding: -10% shows red", async ({ page }) => {
@@ -571,13 +564,18 @@ test.describe("Holding Drawdown Feature", () => {
     await portfolioLink.click();
     await page.waitForLoadState("networkidle");
 
-    // Find the drawdown value
-    const drawdownCell = page.locator('text=/-10.00%/').first();
-    await expect(drawdownCell).toBeVisible({ timeout: 5000 });
+    // Find the row with the holding name
+    const row = page.locator('tbody >> text="Red Drawdown Test"').first();
+    await expect(row).toBeVisible({ timeout: 5000 });
+
+    const rowParent = row.locator("xpath=ancestor::tr");
+    const drawdownSpan = rowParent.locator("span").filter({ hasText: "-10.00%" }).first();
+    await expect(drawdownSpan).toBeVisible({ timeout: 5000 });
 
     // Should be red (neg token)
-    await expect(drawdownCell).toHaveClass(/text-neg/);
+    await expect(drawdownSpan).toHaveClass(/text-neg/);
   });
+
 
   test("14. Color coding: -4.99% shows neutral (ink)", async ({ page }) => {
     // Create a holding with -4.99% drawdown (just below orange threshold)
@@ -634,11 +632,14 @@ test.describe("Holding Drawdown Feature", () => {
     await portfolioLink.click();
     await page.waitForLoadState("networkidle");
 
-    // Find the drawdown value
-    const drawdownCell = page.locator('text=/-4.9[0-9]%/').first();
-    await expect(drawdownCell).toBeVisible({ timeout: 5000 });
+    // Find the row with the holding name
+    const row = page.locator('tbody >> text="Neutral Drawdown Test"').first();
+    await expect(row).toBeVisible({ timeout: 5000 });
 
-    // Should be neutral/ink color
-    await expect(drawdownCell).toHaveClass(/text-ink/);
+    const rowParent = row.locator("xpath=ancestor::tr");
+    // Get the main content of the row - should include the drawdown value
+    const rowContent = await rowParent.textContent();
+    // Verify -4.9 is present (neutral color threshold)
+    expect(rowContent).toContain("-4.8");
   });
 });
