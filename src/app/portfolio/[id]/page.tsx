@@ -140,11 +140,19 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
         const result = (await res.json()) as { lastVal: number | null; navDate: string | null; error?: string };
 
         if (result.lastVal !== null) {
-          updateHolding(holding.id, {
+          const updates: Partial<Omit<Holding, "id" | "portfolioId">> = {
             currentPrice: result.lastVal,
             currentPriceCurrency: "THB",
             navDate: result.navDate ?? undefined,
-          });
+          };
+          if (
+            holding.highestNav === null ||
+            holding.highestNav === undefined ||
+            result.lastVal > holding.highestNav
+          ) {
+            updates.highestNav = result.lastVal;
+          }
+          updateHolding(holding.id, updates);
           updatedCount++;
         }
       } catch {
@@ -196,6 +204,40 @@ function HoldingsView({ portfolioName }: { portfolioName: string }) {
       />
     </>
   );
+}
+
+/**
+ * Drawdown is shown only for holdings that have both a holdingId and companyId
+ * (non-null, non-empty), and only once a highestNav has been recorded via NAV sync.
+ */
+function hasDrawdown(holding: Holding): boolean {
+  return (
+    holding.holdingId !== undefined &&
+    holding.holdingId !== null &&
+    holding.holdingId.trim() !== "" &&
+    holding.companyId !== undefined &&
+    holding.companyId !== null &&
+    holding.companyId.trim() !== "" &&
+    holding.highestNav !== undefined &&
+    holding.highestNav !== null
+  );
+}
+
+/** Drawdown percentage in 0–100 scale, e.g. -7.43. Assumes hasDrawdown() is true. */
+function drawdownPercent(holding: Holding): number {
+  const highest = holding.highestNav as number;
+  if (highest <= 0) return 0;
+  return ((holding.currentPrice - highest) / highest) * 100;
+}
+
+function formatDrawdown(pct: number): string {
+  return `${pct.toFixed(2)}%`;
+}
+
+function drawdownColorClass(pct: number): string {
+  if (pct <= -10) return "text-neg";
+  if (pct <= -5) return "text-orange-500";
+  return "text-ink";
 }
 
 function isNavStale(holding: Holding): boolean {
@@ -393,6 +435,7 @@ function PortfolioHoldingsView({
                     <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">Avg Cost</th>
                     <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">Price</th>
                     <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">NAV Date</th>
+                    <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">Drawdown</th>
                     <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">Value</th>
                     <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">Gain / Loss</th>
                     <th scope="col" className="py-[18px] px-3 text-right text-[11px] font-bold uppercase tracking-[0.05em] text-faint whitespace-nowrap">%</th>
@@ -435,6 +478,15 @@ function PortfolioHoldingsView({
                         <td className="py-4 px-3 text-right text-[14px] font-semibold text-ink">{maskTHB(formatTHB(currentPriceTHB), privacyMode)}</td>
                         <td className={`py-4 px-3 text-right text-[14px] font-semibold whitespace-nowrap ${h.holdingId && isNavStale(h) ? "text-loss" : "text-muted"}`}>
                           {h.navDate ?? "—"}
+                        </td>
+                        <td className="py-4 px-3 text-right text-[14px] font-bold tabular-nums whitespace-nowrap">
+                          {hasDrawdown(h) ? (
+                            <span className={drawdownColorClass(drawdownPercent(h))}>
+                              {formatDrawdown(drawdownPercent(h))}
+                            </span>
+                          ) : (
+                            <span className="text-faint">—</span>
+                          )}
                         </td>
                         <td className="py-4 px-3 text-right">
                           <div className="text-[14px] font-bold text-ink">{maskTHB(formatTHB(marketValue), privacyMode)}</div>
@@ -559,6 +611,14 @@ function HoldingCard({
         <div><div className="text-[11px] font-semibold text-muted">NAV Date</div><div className="mt-0.5 text-[13.5px] font-bold tabular-nums text-muted">{holding.navDate ?? "—"}</div></div>
         <div><div className="text-[11px] font-semibold text-muted">Avg Cost</div><div className="mt-0.5 text-[13.5px] font-bold tabular-nums text-muted">{maskTHB(formatTHB(avgCostTHB), privacyMode)}</div></div>
         <div><div className="text-[11px] font-semibold text-muted">Price</div><div className="mt-0.5 text-[13.5px] font-bold tabular-nums text-ink">{maskTHB(formatTHB(currentPriceTHB), privacyMode)}</div></div>
+        {hasDrawdown(holding) && (
+          <div>
+            <div className="text-[11px] font-semibold text-muted">Drawdown</div>
+            <div className={`mt-0.5 text-[13.5px] font-bold tabular-nums ${drawdownColorClass(drawdownPercent(holding))}`}>
+              {formatDrawdown(drawdownPercent(holding))}
+            </div>
+          </div>
+        )}
       </div>
     </article>
   );

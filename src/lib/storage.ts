@@ -78,6 +78,10 @@ export function loadHoldings(): Holding[] {
         h.targetAllocation === undefined || h.targetAllocation === null
           ? null
           : Number(h.targetAllocation),
+      highestNav:
+        h.highestNav === undefined || h.highestNav === null
+          ? null
+          : Number(h.highestNav),
     })) as Holding[];
 
     return holdings;

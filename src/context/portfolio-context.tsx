@@ -47,6 +47,7 @@ interface HoldingRow {
   holding_id: string | null;
   nav_date: string | null;
   target_allocation: number | null;
+  highest_nav: number | null;
 }
 
 function rowToHolding(row: HoldingRow): Holding {
@@ -70,6 +71,10 @@ function rowToHolding(row: HoldingRow): Holding {
       row.target_allocation === null || row.target_allocation === undefined
         ? null
         : Number(row.target_allocation),
+    highestNav:
+      row.highest_nav === null || row.highest_nav === undefined
+        ? null
+        : Number(row.highest_nav),
   };
 }
 
@@ -175,6 +180,7 @@ export function PortfolioProvider({ portfolioId, children }: PortfolioProviderPr
         if (updates.holdingId !== undefined) dbUpdates.holding_id = updates.holdingId ?? null;
         if (updates.navDate !== undefined) dbUpdates.nav_date = updates.navDate ?? null;
         if (updates.targetAllocation !== undefined) dbUpdates.target_allocation = updates.targetAllocation ?? null;
+        if (updates.highestNav !== undefined) dbUpdates.highest_nav = updates.highestNav ?? null;
         dbUpdates.updated_at = new Date().toISOString();
 
         const { error } = await supabase
