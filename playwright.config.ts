@@ -9,7 +9,10 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
+      },
     },
   ],
   webServer: {

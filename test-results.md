@@ -1,98 +1,97 @@
-# UI Redesign Validation Test Results
+# Holding Drawdown Feature - Test Results
 
-**STATUS: PASS**
+## STATUS: PASS
 
-All 30 functional tests passed. The UI redesign has been successfully implemented with proper styling, interactivity, and layout structure.
+All 14 test cases passed successfully.
 
-## Test Summary
+## CYCLES_REMAINING: 3
 
-**Total Tests:** 30  
-**Passed:** 30  
-**Failed:** 0  
-**Duration:** 47.5 seconds
+## Test Execution Summary
 
-## Functional Tests Validated
+**Date:** 2026-06-26  
+**Test Suite:** `tests/holding-drawdown.spec.ts`  
+**Total Tests:** 14  
+**Passed:** 14  
+**Failed:** 0
 
-### Header & Navigation (Tests 1-3, 21-22, 26, 28)
-- [x] Home page loads without errors
-- [x] Header contains "Investing Portfolio" branding and "Add Portfolio" button
-- [x] Privacy toggle button exists and is clickable
-- [x] Header has proper styling (border-b, bg-background)
-- [x] Logo section renders with icon and text
-- [x] Privacy toggle is keyboard accessible
-- [x] All header buttons are accessible and visible
+### Test Results
 
-### Portfolio Dialog (Tests 4-6, 18, 25)
-- [x] Add Portfolio button opens a dialog with form
-- [x] Dialog can be closed with Escape key
-- [x] New portfolios can be created and saved
-- [x] Form validation requires portfolio name
-- [x] Form inputs are properly connected and functional
+1. **Drawdown column visible on desktop holding table** - PASS
+   - Verified the "Drawdown" column header appears on the portfolio detail page holding table (desktop view)
 
-### Portfolio Cards & Navigation (Tests 7-8, 23)
-- [x] Portfolio cards display expected information
-- [x] Portfolio cards are clickable and navigate to detail page
-- [x] Card click navigation works correctly (URL changes)
+2. **Drawdown shown for eligible holding with -6.67% value** - PASS
+   - Confirmed drawdown displays correctly for holdings with both `holdingId` and `companyId` set
+   - Value formatted as "-6.67%" with 2 decimal places
 
-### Portfolio Detail Page (Tests 9-11, 27)
-- [x] Breadcrumb navigation ("All portfolios") displays
-- [x] Holdings section is visible
-- [x] Add Holding button exists
-- [x] Hero panel with summary stats renders
+3. **Drawdown shown for high drawdown holding with -12% value** - PASS
+   - Verified drawdown calculation: ((currentPrice - highestNav) / highestNav) * 100
+   - Drawdown of -12% shows correctly for eligible holdings
 
-### Tab Navigation (Tests 12-13)
-- [x] Tab navigation elements exist with role="tablist" and role="tab"
-- [x] Tabs are clickable and switch views
-- [x] Clicked tab becomes active (aria-selected="true")
+4. **Drawdown shows 0.00% with neutral color** - PASS
+   - When drawdown is exactly 0%, displayed as "0.00%"
+   - Uses `text-ink` (neutral/dark) color class
 
-### Rebalancing Section (Test 14)
-- [x] Rebalancing section renders correctly
-- [x] Page loads without errors when rebalancing data present
+5. **Drawdown hidden for holding without holdingId** - PASS
+   - Holdings missing `holdingId` do not display drawdown value
+   - Shows "—" (dash) in drawdown column instead
 
-### Layout & Styling (Tests 15-16, 20, 24, 29-30)
-- [x] Header is sticky (sticky class present)
-- [x] Portfolio Summary page layout renders
-- [x] Main layout has responsive structure (max-w constraint)
-- [x] No console errors or warnings
-- [x] Main content area is properly scrollable (flex-1)
-- [x] Body has correct background color styling
+6. **Drawdown hidden for holding without companyId** - PASS
+   - Holdings missing `companyId` do not display drawdown value
+   - Shows "—" (dash) in drawdown column instead
 
-## Design Tokens Verified
+7. **Drawdown hidden for holding without highestNav** - PASS
+   - Holdings where `highestNav` is null/undefined do not display drawdown
+   - Shows "—" (dash) in drawdown column instead
 
-The implementation correctly uses the redesigned visual system:
-- **Background:** `bg-background` (#F0F1F4 neutral gray) on body
-- **Navigation:** Sticky header with border-b and semi-transparent background
-- **Panels:** White cards with proper spacing
-- **Typography:** Plus Jakarta Sans with proper sizing
-- **Interactivity:** Buttons have hover states and focus rings
-- **Responsive:** Classes support mobile (no breakpoint prefix), sm:, and lg: variants
+8. **Drawdown hidden for holding with empty string holdingId** - PASS
+   - Holdings with empty string "" for `holdingId` are treated as ineligible
+   - Shows "—" (dash) in drawdown column instead
 
-## Feature Completeness
+9. **Mobile card shows drawdown for eligible holding** - PASS
+   - On mobile viewport (375px), holding cards display drawdown field
+   - Value "-6.67%" appears for eligible holdings on mobile
 
-✓ Header with logo, branding, privacy toggle, and Add Portfolio button  
-✓ Portfolio creation dialog with form validation  
-✓ Portfolio grid cards with navigation  
-✓ Portfolio detail page with breadcrumb  
-✓ Holdings and Rebalancing tabs  
-✓ Sticky header navigation  
-✓ Responsive layout structure  
-✓ Accessible form elements and dialogs  
-✓ Privacy mode toggle functionality  
-✓ Proper semantic HTML (role="tab", role="tablist", role="article")
+10. **Mobile card shows drawdown 0.00% with neutral color** - PASS
+    - Mobile cards show "0.00%" drawdown when applicable
+    - Neutral color styling applied
 
-## Notes
+11. **Mobile card hides drawdown for ineligible holding** - PASS
+    - Mobile cards do not show drawdown label for ineligible holdings
+    - Drawdown field is completely absent from card UI
 
-- The app runs in localStorage mode (Supabase not configured)
-- All dialogs use native HTML `<dialog>` element with proper close handlers
-- Tab navigation properly uses ARIA attributes for accessibility
-- Form inputs have required field validation
-- Navigation between pages works via Next.js link elements
-- No JavaScript errors or console warnings
+12. **Color coding: -7.25% shows orange** - PASS
+    - Drawdown between -5% and -10% displays in orange (`text-orange-500`)
+    - Color threshold: -5.00% to -9.99%
 
-## Test File Location
-`/Users/nui/Study/ai/investing-list/tests/redesign-validation.spec.ts`
+13. **Color coding: -10% shows red** - PASS
+    - Drawdown at -10% or worse displays in red (`text-neg`)
+    - Color threshold: -10.00% and below
 
-Tests can be run with:
-```bash
-npx playwright test tests/redesign-validation.spec.ts --reporter=line
-```
+14. **Color coding: -4.99% shows neutral (ink)** - PASS
+    - Drawdown better than -5% displays in neutral dark color (`text-ink`)
+    - Color threshold: 0.00% to -4.99%
+
+## Feature Validation
+
+### Requirements Met
+
+- [x] Drawdown column visible on desktop table
+- [x] Drawdown displayed for holdings with both `holdingId` and `companyId` set
+- [x] Drawdown hidden for holdings missing either `holdingId` or `companyId`
+- [x] Drawdown hidden when `highestNav` is null/undefined
+- [x] Drawdown formatted as "X.XX%" with 2 decimal places
+- [x] Color coding applied correctly:
+  - Neutral (`text-ink`) for 0.00% to -4.99%
+  - Orange (`text-orange-500`) for -5.00% to -9.99%
+  - Red (`text-neg`) for -10.00% and below
+- [x] Mobile cards display drawdown for eligible holdings
+- [x] Mobile cards hide drawdown for ineligible holdings
+- [x] Calculation correct: ((currentPrice - highestNav) / highestNav) * 100
+
+## Test Coverage
+
+- Desktop table rendering: 8 tests
+- Mobile card rendering: 3 tests
+- Color coding thresholds: 3 tests
+
+All functional requirements verified. Feature is working as specified.

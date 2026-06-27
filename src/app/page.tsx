@@ -56,7 +56,7 @@ export default function HomePage() {
       if (isSupabaseConfigured) {
         const { data, error } = await supabase
           .from("holdings")
-          .select("id, holding_id, asset_type, nav_date, portfolio_id");
+          .select("id, holding_id, asset_type, nav_date, portfolio_id, highest_nav");
 
         if (error) throw new Error(error.message);
 
@@ -96,14 +96,19 @@ export default function HomePage() {
               const result = (await res.json()) as { lastVal: number | null; navDate: string | null };
 
               if (result.lastVal !== null) {
+                const currentHighest = row.highest_nav as number | null;
+                const update: Record<string, unknown> = {
+                  current_price: result.lastVal,
+                  current_price_currency: "THB",
+                  nav_date: result.navDate,
+                  updated_at: new Date().toISOString(),
+                };
+                if (currentHighest === null || result.lastVal > currentHighest) {
+                  update.highest_nav = result.lastVal;
+                }
                 await supabase
                   .from("holdings")
-                  .update({
-                    current_price: result.lastVal,
-                    current_price_currency: "THB",
-                    nav_date: result.navDate,
-                    updated_at: new Date().toISOString(),
-                  })
+                  .update(update)
                   .eq("id", row.id);
               }
             } catch {
@@ -151,11 +156,20 @@ export default function HomePage() {
               if (result.lastVal !== null) {
                 const idx = allStoredHoldings.findIndex((s) => s.id === holding.id);
                 if (idx !== -1) {
+                  const existing = allStoredHoldings[idx];
+                  const currentHighest = existing.highestNav;
+                  const nextHighest =
+                    currentHighest === null ||
+                    currentHighest === undefined ||
+                    result.lastVal > currentHighest
+                      ? result.lastVal
+                      : currentHighest;
                   allStoredHoldings[idx] = {
-                    ...allStoredHoldings[idx],
+                    ...existing,
                     currentPrice: result.lastVal,
                     currentPriceCurrency: "THB" as const,
                     navDate: result.navDate ?? undefined,
+                    highestNav: nextHighest,
                     updatedAt: new Date(),
                   };
                 }

@@ -53,6 +53,7 @@ export interface Holding {
   holdingId?: string;
   navDate?: string;
   targetAllocation?: number | null; // desired % of total portfolio value (0–100), null = excluded
+  highestNav?: number | null; // highest NAV ever recorded, system-managed during NAV sync
 }
 
 export type BucketId = 1 | 2 | 3;

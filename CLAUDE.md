@@ -120,8 +120,8 @@ Conventions: navy `bg-accent` for primary buttons; `border-line2 bg-panel` for s
 
 | Route | File | Description |
 |---|---|---|
-| `/` | `src/app/page.tsx` | Aggregated summary + sortable portfolio cards grid; editing uses `PortfolioDialog` inline; "Add Portfolio" button in `Header` also opens the dialog; includes "Sync NAV" button (syncs all mutual_fund holdings with a holdingId across all portfolios concurrently) |
-| `/portfolio/[id]` | `src/app/portfolio/[id]/page.tsx` | Per-portfolio holdings view; desktop table + mobile card list; mounts `PortfolioProvider`; "Update NAV" + "Add Holding" buttons always visible. When any holding has a `targetAllocation`, a "Holdings" / "Rebalancing" tab bar (ARIA `role="tablist"`, local React state, default "Holdings", no URL/context) renders below `PortfolioSummary` and gates the holdings list vs. `RebalanceSection`. With no targets there is no tab bar — holdings render directly |
+| `/` | `src/app/page.tsx` | Aggregated summary + sortable portfolio cards grid; editing uses `PortfolioDialog` inline; "Add Portfolio" button in `Header` also opens the dialog; includes "Sync NAV" button (syncs all mutual_fund holdings with a holdingId across all portfolios concurrently; also bumps `highest_nav`/`highestNav` when the fetched `lastVal` exceeds the stored peak) |
+| `/portfolio/[id]` | `src/app/portfolio/[id]/page.tsx` | Per-portfolio holdings view; desktop table + mobile card list; mounts `PortfolioProvider`; "Update NAV" + "Add Holding" buttons always visible. Update NAV also raises `highestNav` when `lastVal` exceeds the stored peak. A "Drawdown" column (desktop) / field (mobile card) shows `((currentPrice - highestNav) / highestNav) * 100` formatted to 2 decimals with `%`, only for holdings where both `holdingId` and `companyId` are non-empty AND `highestNav` is set; color-coded via `drawdownColorClass` (0 to -4.99% `text-ink`, -5 to -9.99% `text-orange-500`, ≤-10% `text-neg`). When any holding has a `targetAllocation`, a "Holdings" / "Rebalancing" tab bar (ARIA `role="tablist"`, local React state, default "Holdings", no URL/context) renders below `PortfolioSummary` and gates the holdings list vs. `RebalanceSection`. With no targets there is no tab bar — holdings render directly |
 
 ### API Routes
 
@@ -132,7 +132,7 @@ Conventions: navy `bg-accent` for primary buttons; `border-line2 bg-panel` for s
 ### Data model (`src/types/portfolio.ts`)
 
 - `Portfolio`: `{ id, name }`
-- `Holding`: belongs to one portfolio; has `assetType` (stock/etf/mutual_fund/bond/cash/money_market_fund/dividend_mutual_fund), `holdingType` (core/satellite), `shares`, `averageCost`/`currentPrice` each with a `Currency` (THB/USD), plus optional `ticker`, `companyId`, `holdingId`, `navDate` (last fetched NAV date string), `targetAllocation` (desired % of total portfolio value, 0–100, null = excluded from rebalancing), and `updatedAt` (set by DB trigger)
+- `Holding`: belongs to one portfolio; has `assetType` (stock/etf/mutual_fund/bond/cash/money_market_fund/dividend_mutual_fund), `holdingType` (core/satellite), `shares`, `averageCost`/`currentPrice` each with a `Currency` (THB/USD), plus optional `ticker`, `companyId`, `holdingId`, `navDate` (last fetched NAV date string), `targetAllocation` (desired % of total portfolio value, 0–100, null = excluded from rebalancing), `highestNav` (peak NAV ever recorded; system-managed during NAV sync only — never editable in `HoldingDialog`; null until first sync), and `updatedAt` (set by DB trigger)
 - `BucketId`: `1 | 2 | 3` — bucket strategy identifiers; `ASSET_TYPE_BUCKET` maps every `AssetType` to a `BucketId`; `BucketSettings` / `DEFAULT_BUCKET_SETTINGS` hold per-user target allocations (Phase 2 will add a provider/persistence layer)
 - `RebalanceSettings` / `DEFAULT_REBALANCE_SETTINGS`: `{ driftThreshold }` (percentage points, default 5); persisted per-user via `rebalance_settings` table when logged in, in-memory only when logged out
 - Cash-like asset types (`cash`, `money_market_fund`): in `HoldingDialog` the "Shares / Units" label becomes "Balance (THB)" and Average Cost / Current Price fields are hidden — both are submitted as `1` via hidden inputs so `shares * 1 = THB balance`
@@ -160,6 +160,7 @@ SQL migrations are in `supabase/` (run manually via Supabase SQL Editor in order
 9. `009_add_asset_types.sql` — drops and recreates `holdings_asset_type_check` to include `cash`, `money_market_fund`, `dividend_mutual_fund`
 10. `010_add_target_allocation.sql` — optional `target_allocation` NUMERIC(5,2) column on holdings
 11. `011_add_rebalance_settings.sql` — `rebalance_settings` table (user_id PK, drift_threshold, RLS, reuses `set_updated_at()` trigger)
+12. `012_add_highest_nav.sql` — optional `highest_nav` NUMERIC(10,4) column on holdings (system-managed peak NAV, updated only during NAV sync, never via UI)
 
 DB column naming is snake_case; TypeScript field naming is camelCase. Context files contain mapper functions (`rowToHolding`, `rowToPortfolio`) for conversion.
 
