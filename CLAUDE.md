@@ -2,6 +2,66 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Coding Principles
+
+### 1. Think Before Coding
+
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+### 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+### 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+### 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+---
+
 ## Commands
 
 ```bash
@@ -51,14 +111,21 @@ This is the central architectural pattern. `isSupabaseConfigured` gates whether 
 ### Context hierarchy (rendered in `AppShell`)
 
 ```
-AuthProvider               ← Supabase auth state + recovery mode
-  PortfolioListProvider    ← list of portfolios (CRUD)
-    HoldingsProvider       ← all holdings aggregated for sidebar stats
-      <page content>
-        PortfolioProvider  ← per-portfolio holdings (CRUD), mounted per route
+AuthProvider                  ← Supabase auth state + recovery mode
+  PrivacyModeProvider         ← in-memory privacy toggle (masks THB amounts)
+    PortfolioListProvider     ← list of portfolios (CRUD)
+      HoldingsProvider        ← all holdings aggregated for portfolio card stats
+        BucketSettingsProvider    ← bucket target allocations (persisted per user)
+          RebalanceSettingsProvider ← drift threshold (persisted per user)
+            Header + <page content>
+              PortfolioProvider ← per-portfolio holdings (CRUD), mounted per route
 ```
 
-`HoldingsProvider` (`src/context/holdings-context.tsx`) loads a lightweight subset of all holdings to compute `PortfolioStats` shown in sidebar cards. `PortfolioProvider` (`src/context/portfolio-context.tsx`) loads full holding details for a single portfolio page. After mutations, pages call `reload()` from `HoldingsProvider` to refresh sidebar stats.
+`HoldingsProvider` (`src/context/holdings-context.tsx`) loads a lightweight subset of all holdings to compute `PortfolioStats` shown in portfolio cards on the home page. `PortfolioProvider` (`src/context/portfolio-context.tsx`) loads full holding details for a single portfolio page. After mutations, pages call `reload()` from `HoldingsProvider` to refresh portfolio card stats.
+
+### Privacy context (`src/context/privacy-context.tsx`)
+
+In-memory only — never persisted. Exposes `privacyMode` (boolean) and `togglePrivacyMode()`. When enabled, THB amounts across the app are masked. `Header` renders the privacy toggle button (`data-testid="privacy-toggle"`).
 
 ### Auth context (`src/context/auth-context.tsx`)
 
@@ -133,7 +200,7 @@ Conventions: navy `bg-accent` for primary buttons; `border-line2 bg-panel` for s
 
 - `Portfolio`: `{ id, name }`
 - `Holding`: belongs to one portfolio; has `assetType` (stock/etf/mutual_fund/bond/cash/money_market_fund/dividend_mutual_fund), `holdingType` (core/satellite), `shares`, `averageCost`/`currentPrice` each with a `Currency` (THB/USD), plus optional `ticker`, `companyId`, `holdingId`, `navDate` (last fetched NAV date string), `targetAllocation` (desired % of total portfolio value, 0–100, null = excluded from rebalancing), `highestNav` (peak NAV ever recorded; system-managed during NAV sync only — never editable in `HoldingDialog`; null until first sync), and `updatedAt` (set by DB trigger)
-- `BucketId`: `1 | 2 | 3` — bucket strategy identifiers; `ASSET_TYPE_BUCKET` maps every `AssetType` to a `BucketId`; `BucketSettings` / `DEFAULT_BUCKET_SETTINGS` hold per-user target allocations (Phase 2 will add a provider/persistence layer)
+- `BucketId`: `1 | 2 | 3` — bucket strategy identifiers; `ASSET_TYPE_BUCKET` maps every `AssetType` to a `BucketId`; `BucketSettings` / `DEFAULT_BUCKET_SETTINGS` hold per-user target allocations (persisted via `bucket_settings` Supabase table when logged in, localStorage when logged out)
 - `RebalanceSettings` / `DEFAULT_REBALANCE_SETTINGS`: `{ driftThreshold }` (percentage points, default 5); persisted per-user via `rebalance_settings` table when logged in, in-memory only when logged out
 - Cash-like asset types (`cash`, `money_market_fund`): in `HoldingDialog` the "Shares / Units" label becomes "Balance (THB)" and Average Cost / Current Price fields are hidden — both are submitted as `1` via hidden inputs so `shares * 1 = THB balance`
 

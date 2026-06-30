@@ -1,6 +1,6 @@
 # Investing Portfolio
 
-A personal portfolio tracker built with Next.js 16, React 19, and Tailwind CSS v4. Supports multiple portfolios, core/satellite allocation tracking, and live NAV fetching for Thai mutual funds via the SEC API.
+A personal portfolio tracker built with Next.js 16, React 19, and Tailwind CSS v4. Supports multiple portfolios, core/satellite allocation tracking, rebalancing with drift analysis, privacy mode, and live NAV fetching for Thai mutual funds via the SEC API.
 
 ## Getting Started
 
@@ -50,6 +50,7 @@ npx playwright test  # Run Playwright tests (requires dev server running)
 |---|---|
 | Framework | Next.js 16 (App Router) |
 | UI | React 19 + Tailwind CSS v4 |
+| Language | TypeScript 5.9 |
 | Auth & DB | Supabase (email/password, RLS) |
 | Deployment | Netlify (`@netlify/plugin-nextjs`) |
 | Testing | Playwright |
