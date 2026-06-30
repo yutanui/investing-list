@@ -51,14 +51,21 @@ This is the central architectural pattern. `isSupabaseConfigured` gates whether 
 ### Context hierarchy (rendered in `AppShell`)
 
 ```
-AuthProvider               ← Supabase auth state + recovery mode
-  PortfolioListProvider    ← list of portfolios (CRUD)
-    HoldingsProvider       ← all holdings aggregated for sidebar stats
-      <page content>
-        PortfolioProvider  ← per-portfolio holdings (CRUD), mounted per route
+AuthProvider                  ← Supabase auth state + recovery mode
+  PrivacyModeProvider         ← in-memory privacy toggle (masks THB amounts)
+    PortfolioListProvider     ← list of portfolios (CRUD)
+      HoldingsProvider        ← all holdings aggregated for portfolio card stats
+        BucketSettingsProvider    ← bucket target allocations (persisted per user)
+          RebalanceSettingsProvider ← drift threshold (persisted per user)
+            Header + <page content>
+              PortfolioProvider ← per-portfolio holdings (CRUD), mounted per route
 ```
 
-`HoldingsProvider` (`src/context/holdings-context.tsx`) loads a lightweight subset of all holdings to compute `PortfolioStats` shown in sidebar cards. `PortfolioProvider` (`src/context/portfolio-context.tsx`) loads full holding details for a single portfolio page. After mutations, pages call `reload()` from `HoldingsProvider` to refresh sidebar stats.
+`HoldingsProvider` (`src/context/holdings-context.tsx`) loads a lightweight subset of all holdings to compute `PortfolioStats` shown in portfolio cards on the home page. `PortfolioProvider` (`src/context/portfolio-context.tsx`) loads full holding details for a single portfolio page. After mutations, pages call `reload()` from `HoldingsProvider` to refresh portfolio card stats.
+
+### Privacy context (`src/context/privacy-context.tsx`)
+
+In-memory only — never persisted. Exposes `privacyMode` (boolean) and `togglePrivacyMode()`. When enabled, THB amounts across the app are masked. `Header` renders the privacy toggle button (`data-testid="privacy-toggle"`).
 
 ### Auth context (`src/context/auth-context.tsx`)
 
@@ -133,7 +140,7 @@ Conventions: navy `bg-accent` for primary buttons; `border-line2 bg-panel` for s
 
 - `Portfolio`: `{ id, name }`
 - `Holding`: belongs to one portfolio; has `assetType` (stock/etf/mutual_fund/bond/cash/money_market_fund/dividend_mutual_fund), `holdingType` (core/satellite), `shares`, `averageCost`/`currentPrice` each with a `Currency` (THB/USD), plus optional `ticker`, `companyId`, `holdingId`, `navDate` (last fetched NAV date string), `targetAllocation` (desired % of total portfolio value, 0–100, null = excluded from rebalancing), `highestNav` (peak NAV ever recorded; system-managed during NAV sync only — never editable in `HoldingDialog`; null until first sync), and `updatedAt` (set by DB trigger)
-- `BucketId`: `1 | 2 | 3` — bucket strategy identifiers; `ASSET_TYPE_BUCKET` maps every `AssetType` to a `BucketId`; `BucketSettings` / `DEFAULT_BUCKET_SETTINGS` hold per-user target allocations (Phase 2 will add a provider/persistence layer)
+- `BucketId`: `1 | 2 | 3` — bucket strategy identifiers; `ASSET_TYPE_BUCKET` maps every `AssetType` to a `BucketId`; `BucketSettings` / `DEFAULT_BUCKET_SETTINGS` hold per-user target allocations (persisted via `bucket_settings` Supabase table when logged in, localStorage when logged out)
 - `RebalanceSettings` / `DEFAULT_REBALANCE_SETTINGS`: `{ driftThreshold }` (percentage points, default 5); persisted per-user via `rebalance_settings` table when logged in, in-memory only when logged out
 - Cash-like asset types (`cash`, `money_market_fund`): in `HoldingDialog` the "Shares / Units" label becomes "Balance (THB)" and Average Cost / Current Price fields are hidden — both are submitted as `1` via hidden inputs so `shares * 1 = THB balance`
 
